@@ -1,0 +1,17 @@
+{
+  "name": "zero",
+  "version": "0.1.0",
+  "description": "",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "bn.js": "^5.0.0",
+    "ecurve-bn256": "^1.0.15",
+    "elliptic": "^6.5.1",
+    "web3": "^1.2.4"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0"
+  }
+}
