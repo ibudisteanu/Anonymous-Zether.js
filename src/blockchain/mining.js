@@ -1,4 +1,3 @@
-const BLOCK_TIME_OUT = 1000;
 
 const Block = require('./block');
 
@@ -10,16 +9,14 @@ class Mining{
 
         this._started = false;
 
-        this._includeTxPromise = null;
-        this._includeTxPromiseResolver = null;
-        this._includeTxCallbacks = [];
+        this.pendingTxs = [];
 
     }
 
     start(){
         if (this._started) return false;
 
-        this._interval = setTimeout( this._mineBlock.bind(this),  BLOCK_TIME_OUT );
+        this.continueMining();
 
         this._started = true;
     }
@@ -32,53 +29,50 @@ class Mining{
         this._started = false;
     }
 
+    async _createBlock(){
+
+        const height = this._blockchain.getHeight();
+        const block = new Block({height: height+1, blockchain: this._blockchain, timestamp: new Date().getTime() });
+
+        for (let i=0; i < this.pendingTxs.length; i++) {
+            block.transactions.push(this.pendingTxs[i]);
+        }
+        this.pendingTxs = [];
+
+        return block;
+
+    }
+
     async _mineBlock(){
+
 
         try{
 
-            const height = this._blockchain.getHeight();
-            const block = new Block({height: height+1, blockchain: this._blockchain, timestamp: new Date().getTime() });
+            const block = await this._createBlock();
 
-            if (this._includeTxPromise){
 
-                const resolver = this._includeTxPromiseResolver;
-                const callbacks = this._includeTxCallbacks;
-
-                this._includeTxPromise = null;
-                this._includeTxPromiseResolver = null;
-                this._includeTxCallbacks = [];
-
-                for (let i=0; i < callbacks.length; i++)
-                    await callbacks[i]( {block} );
-
-                resolver(true);
-
-            }
-
+            this._interval = undefined;
             await this._blockchain.pushBlock(block);
 
         }catch(err){
             console.error('Error mining block', err);
         }
 
-        this._interval = setTimeout( this._mineBlock.bind(this),  BLOCK_TIME_OUT );
+        this.continueMining();
+    }
+
+    continueMining(){
+
+        if (!this._interval)
+            this._interval = setTimeout( this._mineBlock.bind(this),  this._blockchain.BLOCK_TIME_OUT );
 
     }
 
-    includeTx(cb){
+    includeTx(tx){
 
-        if (!this._includeTxPromise) {
+        this.pendingTxs.push( tx );
 
-            this._includeTxCallbacks = [];
-            this._includeTxPromise = new Promise((resolve) => {
-                this._includeTxPromiseResolver = resolve;
-            });
 
-        }
-
-        this._includeTxCallbacks.push(cb);
-
-        return this._includeTxPromise;
 
     }
 

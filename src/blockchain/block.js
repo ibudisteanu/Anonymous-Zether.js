@@ -10,12 +10,12 @@ class Block {
 
     }
 
-    executeTransactions(){
+    async executeTransactions(){
 
         for (let i=0; i < this.transactions.length; i++){
             const tx = this.transactions[i];
 
-            tx.processTx();
+            await tx.processTx({block: this});
 
         }
 

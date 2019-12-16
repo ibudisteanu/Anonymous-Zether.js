@@ -7,6 +7,8 @@ class Blockchain{
 
     constructor(props) {
 
+        this.BLOCK_TIME_OUT = 1000;
+
         this._blocks = {};
         this.mining = new Mining({blockchain: this});
         this.mining.start();
@@ -33,7 +35,7 @@ class Blockchain{
         this._blocks[ this.getHeight()+1 ] = block;
         this.setHeight( this.getHeight() +1 );
 
-        block.executeTransactions();
+        await block.executeTransactions();
 
         this.events.emit('new-block', {block});
     }

@@ -166,9 +166,6 @@ class BurnVerifier{
             bn128.serialize(sigmaAuxiliaries.A_CLnPrime),
         ]));
 
-        console.log('-------------');
-        console.log( 'epoch', statement.epoch );
-
         this._commonVerifier.verify(proof, sigmaAuxiliaries, burnAuxiliaries);
 
         return true;

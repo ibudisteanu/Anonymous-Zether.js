@@ -13,7 +13,7 @@ class BurnProver {
 
     constructor() {
         this.params = new GeneratorParams(32);
-        this.ipProver = new InnerProductProver();
+        this.ipProver = new InnerProductProver('burner');
     }
 
     generateProof (statement, witness) { // salt probably won't be used
@@ -132,7 +132,6 @@ class BurnProver {
         proof.s_vDiff = k_vDiff.redAdd(proof.c.redMul(witness['bDiff']));
         proof.s_nuDiff = k_nuDiff.redAdd(proof.c.redMul(gammaDiff));
 
-        console.log( 'epoch', statement['epoch'] );
 
         var gs = this.params.getGs();
         var hsPrime = this.params.getHs().hadamard(ys.invert());
@@ -151,7 +150,7 @@ class BurnProver {
         var primeBase = new GeneratorParams(u_x, gs, hsPrime);
         var ipStatement = { 'primeBase': primeBase, 'P': ZPrime };
         var ipWitness = { 'l': lPoly.evaluate(x), 'r': rPoly.evaluate(x) };
-        proof.ipProof = this.ipProver.generateProof('burner',ipStatement, ipWitness, o);
+        proof.ipProof = this.ipProver.generateProof(ipStatement, ipWitness, o);
 
         return proof;
     }

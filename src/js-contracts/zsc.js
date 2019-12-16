@@ -96,6 +96,10 @@ class ZSC{
         this._lastRollOver[ utils.fromHex(hash) ] = value;
     }
 
+    setEpoch(epoch ) {
+        this.lastGlobalUpdate = epoch;
+    }
+
 
     fund({block}, y, bTransfer){
 
@@ -335,6 +339,7 @@ class ZSC{
 
         if (this.lastGlobalUpdate < e){
 
+            console.log("this.lastGlobalUpdate = e", this.lastGlobalUpdate, "=> ", e);
             this.lastGlobalUpdate = e;
             this._nonceSet = {};
 

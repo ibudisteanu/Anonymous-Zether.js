@@ -12,7 +12,7 @@ class ZetherProver {
 
     constructor() {
         this.params = new GeneratorParams(64);
-        this.ipProver = new InnerProductProver();
+        this.ipProver = new InnerProductProver('verifier');
     }
 
     recursivePolynomials (list, accum, p, q) {
@@ -334,7 +334,7 @@ class ZetherProver {
         var primeBase = new GeneratorParams(u_x, gs, hsPrime);
         var ipStatement = { 'primeBase': primeBase, 'P': ZPrime };
         var ipWitness = { 'l': lPoly.evaluate(x), 'r': rPoly.evaluate(x) };
-        proof.ipProof = this.ipProver.generateProof('verifier', ipStatement, ipWitness, o);
+        proof.ipProof = this.ipProver.generateProof( ipStatement, ipWitness, o);
 
         return proof;
     }

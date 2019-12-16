@@ -11,6 +11,7 @@ async function run(){
     await alice.initialize();
     await bob.initialize();
 
+    alice.friends.add("Bob", bob.account.public() );
 
     //deposit into alice
     Blockchain.events.on('new-block',async ({block})=>{
@@ -18,16 +19,19 @@ async function run(){
         if (block.height === 1)
             await alice.deposit(1000);
 
-        if (block.height === 2)
+        if (block.height === 10)
             await alice.withdraw(10);
+
+        // if (block.height === 10)
+        //     await alice.transfer("Bob", 100)
+
 
     });
 
     // //await alice.withdraw(10);
     //
-    // alice.friends.add("Bob", bob.account.public() );
+
     //
-    // await alice.transfer("Bob", 100)
     //
     // console.log("transfer1");
     // await bob.transfer("Alice", 10, ["Carol", "Dave"]);

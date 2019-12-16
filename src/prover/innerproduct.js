@@ -9,14 +9,15 @@ const utils = require('../utils/utils.js');
 
 
 class InnerProductProver {
-    constructor() {
 
+    constructor(type) {
+        this._type = type;
     }
 
-    _generateProof (type, base, P, as, bs, ls, rs, previousChallenge) {
+    _generateProof (base, P, as, bs, ls, rs, previousChallenge) {
         var n = as.length();
         if (n == 1) {
-            var proof = new InnerProductProof(type);
+            var proof = new InnerProductProof(this._type);
             proof.ls = ls;
             proof.rs = rs;
             proof.a = as.getVector()[0];
@@ -52,11 +53,11 @@ class InnerProductProver {
         var PPrime = L.mul(x.redMul(x)).add(R.mul(xInv.redMul(xInv))).add(P);
         var basePrime = new GeneratorParams(u, gPrime, hPrime);
 
-        return this._generateProof(type, basePrime, PPrime, aPrime, bPrime, ls, rs, x);
+        return this._generateProof(basePrime, PPrime, aPrime, bPrime, ls, rs, x);
     };
 
-    generateProof (type, statement, witness, salt) {
-        return this._generateProof(type, statement['primeBase'], statement['P'], witness['l'], witness['r'], [], [], salt);
+    generateProof (statement, witness, salt) {
+        return this._generateProof(statement['primeBase'], statement['P'], witness['l'], witness['r'], [], [], salt);
     };
 
 }

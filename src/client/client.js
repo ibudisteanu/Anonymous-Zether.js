@@ -6,10 +6,13 @@ const Service = require('../utils/service.js');
 const bn128 = require('../utils/bn128.js');
 
 const Blockchain = require('./../blockchain/blockchain');
+const Transaction = require('./../blockchain/transaction');
+
 const Account = require('./account');
 const Friends = require('./friends');
 
 const ZSC = require ('./../js-contracts/zsc');
+
 
 class Client {
 
@@ -89,17 +92,22 @@ class Client {
 
         console.log("Initiating deposit.");
 
-        await Blockchain.mining.includeTx(async ({block})=>{
+        const tx = new Transaction({blockchain: Blockchain});
+        tx.onValidation = ({block, tx})=> ZSC.fund( {block}, account.keypair['y'], value);
 
-            await ZSC.fund( {block}, account.keypair['y'], value);
+        Blockchain.mining.includeTx(tx);
 
-            account._state = account._simulate(); // have to freshly call it
-            account._state.pending += value;
-            console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+        return new Promise((resolve)=>{
+
+            tx.onProcess = ()=>{
+                account._state = account._simulate(); // have to freshly call it
+                account._state.pending += value;
+                console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+
+                resolve(value);
+            };
 
         });
-
-        return value;
 
     }
 
@@ -193,12 +201,17 @@ class Client {
         var proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair['x'], r, value, state.available - value, index);
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
-        ZSC.transfer(C, D, y, u, proof);
+        return Blockchain.mining.includeTx(async (block)=>{
 
-        account._state = account._simulate(); // have to freshly call it
-        account._state.nonceUsed = true;
-        account._state.pending -= value;
-        console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+            await ZSC.transfer( {block}, C, D, y, u, proof);
+
+            account._state = account._simulate(); // have to freshly call it
+            account._state.nonceUsed = true;
+            account._state.pending -= value;
+            console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+
+        });
+
 
     };
 
@@ -237,6 +250,9 @@ class Client {
 
         return Blockchain.mining.includeTx( async ({block})=>{
 
+            block.timestamp = state.lastRollOver * this._epochLength * 1000;
+            ZSC.lastGlobalUpdate = state.lastRollOver;
+
             await ZSC.burn( {block}, account.keypair['y'], value, u, proof, this._home );
 
             account._state = account._simulate(); // have to freshly call it
@@ -257,7 +273,7 @@ class Client {
 
 
     _getEpoch (timestamp) {
-        return Math.floor((timestamp === undefined ? (new Date).getTime() / 1000 : timestamp) / this._epochLength);
+        return Math.floor(( timestamp === undefined ? (new Date).getTime() : timestamp) / 1000 / this._epochLength);
     };
 
     match (address, candidate) {

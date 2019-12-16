@@ -1,14 +1,19 @@
 class Transaction{
 
-    constructor({block, blockchain}){
+    constructor({blockchain}){
 
-        this._block = block;
         this._blockchain = blockchain;
 
         this.onProcess = undefined;
+        this.onValidation = undefined;
+
     }
 
-    processTx(){
+    async processTx({block}){
+
+        if (!this.onValidation) throw "onValidation is null";
+
+        await this.onValidation({ block: block, tx: this, blockchain: this._blockchain });
 
         if (this.onProcess)
             this.onProcess();
