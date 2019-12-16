@@ -10,6 +10,10 @@ class Mining{
 
         this._started = false;
 
+        this._includeTxPromise = null;
+        this._includeTxPromiseResolver = null;
+        this._includeTxCallbacks = [];
+
     }
 
     start(){
@@ -28,20 +32,53 @@ class Mining{
         this._started = false;
     }
 
-    _mineBlock(){
+    async _mineBlock(){
 
         try{
 
             const height = this._blockchain.getHeight();
             const block = new Block({height: height+1, blockchain: this._blockchain, timestamp: new Date().getTime() });
 
-            this._blockchain.pushBlock(block);
+            if (this._includeTxPromise){
+
+                const resolver = this._includeTxPromiseResolver;
+                const callbacks = this._includeTxCallbacks;
+
+                this._includeTxPromise = null;
+                this._includeTxPromiseResolver = null;
+                this._includeTxCallbacks = [];
+
+                for (let i=0; i < callbacks.length; i++)
+                    await callbacks[i](block);
+
+                resolver(true);
+
+            }
+
+            await this._blockchain.pushBlock(block);
 
         }catch(err){
 
         }
 
         this._interval = setTimeout( this._mineBlock.bind(this),  BLOCK_TIME_OUT );
+
+    }
+
+    includeTx(cb){
+
+        if (!this._includeTxPromise) {
+
+            this._includeTxCallbacks = [];
+            this._includeTxPromise = new Promise((resolve) => {
+                this._includeTxPromiseResolver = resolve;
+            });
+
+        }
+
+        this._includeTxCallbacks.push(cb);
+
+        return this._includeTxPromise;
 
     }
 

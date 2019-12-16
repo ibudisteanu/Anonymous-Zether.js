@@ -13,6 +13,9 @@ class Block {
     executeTransactions(){
 
         for (let i=0; i < this.transactions.length; i++){
+            const tx = this.transactions[i];
+
+            tx.processTx();
 
         }
 

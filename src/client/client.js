@@ -1,4 +1,3 @@
-console.log("Hello WOrld!!!");
 
 const BN = require('bn.js');
 
@@ -6,14 +5,11 @@ const utils = require('../utils/utils.js');
 const Service = require('../utils/service.js');
 const bn128 = require('../utils/bn128.js');
 
-console.log("Hello WOrld!!!6");
-
+const Blockchain = require('./../blockchain/blockchain');
 const Account = require('./account');
 const Friends = require('./friends');
 
 const ZSC = require ('./../js-contracts/zsc');
-const ZVerifier = require ('./../js-contracts/zverifier');
-const BurnerVerifier = require ('./../js-contracts/burferverifier');
 
 class Client {
 
@@ -92,18 +88,18 @@ class Client {
         var account = this.account;
 
         console.log("Initiating deposit.");
-        return new Promise((resolve, reject) => {
 
-            ZSC.fund( account.keypair['y'], value);
+        return Blockchain.mining.includeTx(({block})=>{
 
+            ZSC.fund( {block}, account.keypair['y'], value);
 
             account._state = account._simulate(); // have to freshly call it
             account._state.pending += value;
             console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
-            resolve( value );
 
         });
-    };
+
+    }
 
     estimate (size, contract) {
         // this expression is meant to be a relatively close upper bound of the time that proving + a few verifications will take, as a function of anonset size
@@ -111,7 +107,7 @@ class Client {
         // i calibrated this on _my machine_. if you are getting transfer failures, you might need to bump up the constants, recalibrate yourself, etc.
         return Math.ceil(size * Math.log(size) / Math.log(2) * 20 + 5200) + (contract ? 20 : 0);
         // the 20-millisecond buffer is designed to give the callback time to fire (see below).
-    };
+    }
 
     transfer (name, value, decoys) {
         if (this.account.keypair === undefined)

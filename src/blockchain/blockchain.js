@@ -23,7 +23,7 @@ class Blockchain{
         this._blocks[height] = block;
     }
 
-    pushBlock(block){
+    async pushBlock(block){
 
         console.info('Block pushed', block.height, ' txs ', block.transactions.length);
 
