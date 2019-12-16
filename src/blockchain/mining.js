@@ -1,5 +1,6 @@
 
 const Block = require('./block');
+const consts = require('./../consts');
 
 class Mining{
 
@@ -37,6 +38,7 @@ class Mining{
         for (let i=0; i < this.pendingTxs.length; i++) {
             block.transactions.push(this.pendingTxs[i]);
         }
+
         this.pendingTxs = [];
 
         return block;
@@ -64,7 +66,7 @@ class Mining{
     continueMining(){
 
         if (!this._interval)
-            this._interval = setTimeout( this._mineBlock.bind(this),  this._blockchain.BLOCK_TIME_OUT );
+            this._interval = setTimeout( this._mineBlock.bind(this),  consts.BLOCK_TIME_OUT );
 
     }
 

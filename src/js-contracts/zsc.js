@@ -1,6 +1,7 @@
 
 const utils  = require("./../utils/utils");
 const BN = require('bn.js')
+const consts = require('./../consts');
 
 const { FieldVector } = require('./../prover/algebra.js');
 const bn128 = require('../utils/bn128.js');
@@ -95,11 +96,6 @@ class ZSC{
     _setLastRollOver(hash, value){
         this._lastRollOver[ utils.fromHex(hash) ] = value;
     }
-
-    setEpoch(epoch ) {
-        this.lastGlobalUpdate = epoch;
-    }
-
 
     fund({block}, y, bTransfer){
 
@@ -299,7 +295,7 @@ class ZSC{
     // function _rollOver(bytes32 yHash) internal {
     _rollOver({block}, yHash ){
 
-        let e = Math.floor( block.timestamp / 1000 / this.epochLength);
+        let e = Math.floor( block.timestamp / consts.BLOCK_TIME_OUT / this.epochLength);
         console.log("eeeeeeeeeeeepoch", e);
 
         if (this._getLastRollOver(yHash) < e) {

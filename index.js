@@ -22,6 +22,9 @@ async function run(){
         if (block.height === 10)
             await alice.withdraw(10);
 
+        if (block.height === 20)
+            await alice.withdraw(10);
+
         // if (block.height === 10)
         //     await alice.transfer("Bob", 100)
 

@@ -1,6 +1,7 @@
 
 const BN = require('bn.js');
 
+const consts = require('./../consts');
 const utils = require('../utils/utils.js');
 const Service = require('../utils/service.js');
 const bn128 = require('../utils/bn128.js');
@@ -93,7 +94,9 @@ class Client {
         console.log("Initiating deposit.");
 
         const tx = new Transaction({blockchain: Blockchain});
-        tx.onValidation = ({block, tx})=> ZSC.fund( {block}, account.keypair['y'], value);
+        tx.onValidation = ({block, tx})=> {
+            return ZSC.fund( {block}, account.keypair['y'], value);
+        };
 
         Blockchain.mining.includeTx(tx);
 
@@ -198,6 +201,7 @@ class Client {
         var CRn = result.map((simulated) => bn128.serialize(bn128.unserialize(simulated[1]).add(D.neg())));
         C = C.map(bn128.serialize);
         D = bn128.serialize(D);
+
         var proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair['x'], r, value, state.available - value, index);
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
@@ -223,6 +227,8 @@ class Client {
         var state = account._simulate();
         if (value > state.available + state.pending)
             throw "Requested withdrawal amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
+
+
         var wait = this._away();
         var seconds = Math.ceil(wait / 1000);
         var plural = seconds == 1 ? "" : "s";
@@ -234,10 +240,11 @@ class Client {
             console.log("Your withdrawal has been queued. Please wait " + seconds + " second" + plural + ", until the next epoch...");
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
-        if (3100 > wait) { // determined empirically. IBFT, block time 1
-            console.log("Initiating withdrawal.");
-            return utils.sleep(wait).then(() => this.withdraw(value));
-        }
+
+        // if (wait > 0) {
+        //     console.log("Initiating withdrawal.");
+        //     return utils.sleep(wait).then(() => this.withdraw(value));
+        // }
 
 
         const result = ZSC.simulateAccounts( [account.keypair['y']], this._getEpoch() );
@@ -248,32 +255,39 @@ class Client {
         var proof = this.service.proveBurn(CLn, CRn, account.keypair['y'], value, state.lastRollOver, this._home, account.keypair['x'], state.available - value);
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
-        return Blockchain.mining.includeTx( async ({block})=>{
+        const tx = new Transaction({blockchain: Blockchain});
+        tx.onValidation = ({block, tx})=> {
+            return ZSC.burn( {block}, account.keypair['y'], value, u, proof, this._home );
+        };
 
-            block.timestamp = state.lastRollOver * this._epochLength * 1000;
-            ZSC.lastGlobalUpdate = state.lastRollOver;
+        Blockchain.mining.includeTx(tx);
 
-            await ZSC.burn( {block}, account.keypair['y'], value, u, proof, this._home );
+        return new Promise((resolve)=>{
 
-            account._state = account._simulate(); // have to freshly call it
-            account._state.nonceUsed = true;
-            account._state.pending -= value;
+            tx.onProcess = ()=>{
 
-            console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+                account._state = account._simulate(); // have to freshly call it
+                account._state.nonceUsed = true;
+                account._state.pending -= value;
 
-        } );
+                console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
+
+                resolve(value);
+            };
+
+        });
 
     };
 
     _away () { // returns ms away from next epoch change
         var current = (new Date).getTime();
-        return Math.ceil(current / (this._epochLength * 1000)) * (this._epochLength * 1000) - current;
+        return Math.ceil(current / (this._epochLength * consts.BLOCK_TIME_OUT)) * (this._epochLength * consts.BLOCK_TIME_OUT) - current;
     };
 
 
     _getEpoch (timestamp) {
-        return Math.floor(( timestamp === undefined ? (new Date).getTime() : timestamp) / 1000 / this._epochLength);
+        return Math.floor(( timestamp === undefined ? (new Date).getTime() : timestamp) / consts.BLOCK_TIME_OUT / this._epochLength);
     };
 
     match (address, candidate) {
