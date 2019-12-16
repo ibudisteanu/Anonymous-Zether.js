@@ -1,6 +1,7 @@
 const Block = require('./block');
 const Mining = require('./mining');
 
+const EventEmitter = require('events').EventEmitter;
 
 class Blockchain{
 
@@ -11,6 +12,8 @@ class Blockchain{
         this.mining.start();
 
         this._height = -1;
+
+        this.events = new EventEmitter();
     }
 
     getBlock(height){
@@ -32,6 +35,7 @@ class Blockchain{
 
         block.executeTransactions();
 
+        this.events.emit('new-block', {block});
     }
 
     getHeight(){

@@ -13,16 +13,16 @@ async function run(){
 
 
     //deposit into alice
-    setTimeout( async ()=> {
+    Blockchain.events.on('new-block',async ({block})=>{
 
-        await alice.deposit(1000);
+        if (block.height === 1)
+            await alice.deposit(1000);
 
-    }, 5000);
+        if (block.height === 2)
+            await alice.withdraw(10);
 
-    //
-    //
-    //
-    // await alice.withdraw(10);
+    });
+
     // //await alice.withdraw(10);
     //
     // alice.friends.add("Bob", bob.account.public() );

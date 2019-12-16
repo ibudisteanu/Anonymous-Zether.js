@@ -80,7 +80,7 @@ class Client {
 
     }
 
-    deposit (value) {
+    async deposit (value) {
 
         if (this.account.keypair === undefined)
             throw "Client's account is not yet initialized!";
@@ -89,15 +89,17 @@ class Client {
 
         console.log("Initiating deposit.");
 
-        return Blockchain.mining.includeTx(({block})=>{
+        await Blockchain.mining.includeTx(async ({block})=>{
 
-            ZSC.fund( {block}, account.keypair['y'], value);
+            await ZSC.fund( {block}, account.keypair['y'], value);
 
             account._state = account._simulate(); // have to freshly call it
             account._state.pending += value;
             console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
         });
+
+        return value;
 
     }
 
@@ -109,7 +111,7 @@ class Client {
         // the 20-millisecond buffer is designed to give the callback time to fire (see below).
     }
 
-    transfer (name, value, decoys) {
+    async transfer (name, value, decoys) {
         if (this.account.keypair === undefined)
             throw "Client's account is not yet initialized!";
         decoys = decoys ? decoys : [];
@@ -191,7 +193,6 @@ class Client {
         var proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair['x'], r, value, state.available - value, index);
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
-        ZSC.lastGlobalUpdate = state.lastRollOver;
         ZSC.transfer(C, D, y, u, proof);
 
         account._state = account._simulate(); // have to freshly call it
@@ -202,7 +203,7 @@ class Client {
     };
 
 
-    withdraw (value) {
+    async withdraw (value) {
         if (this.account.keypair === undefined)
             throw "Client's account is not yet initialized!";
         var account = this.account;
@@ -234,14 +235,17 @@ class Client {
         var proof = this.service.proveBurn(CLn, CRn, account.keypair['y'], value, state.lastRollOver, this._home, account.keypair['x'], state.available - value);
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
-        ZSC.lastGlobalUpdate = state.lastRollOver;
-        ZSC.burn( account.keypair['y'], value, u, proof, this._home );
+        return Blockchain.mining.includeTx( async ({block})=>{
 
-        account._state = account._simulate(); // have to freshly call it
-        account._state.nonceUsed = true;
-        account._state.pending -= value;
+            await ZSC.burn( {block}, account.keypair['y'], value, u, proof, this._home );
 
-        console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+            account._state = account._simulate(); // have to freshly call it
+            account._state.nonceUsed = true;
+            account._state.pending -= value;
+
+            console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+
+        } );
 
 
     };

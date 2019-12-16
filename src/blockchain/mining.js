@@ -49,7 +49,7 @@ class Mining{
                 this._includeTxCallbacks = [];
 
                 for (let i=0; i < callbacks.length; i++)
-                    await callbacks[i](block);
+                    await callbacks[i]( {block} );
 
                 resolver(true);
 
@@ -58,7 +58,7 @@ class Mining{
             await this._blockchain.pushBlock(block);
 
         }catch(err){
-
+            console.error('Error mining block', err);
         }
 
         this._interval = setTimeout( this._mineBlock.bind(this),  BLOCK_TIME_OUT );
