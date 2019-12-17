@@ -1,3 +1,4 @@
+const clone = require('clone');
 
 const utils  = require("./../utils/utils");
 const BN = require('bn.js')
@@ -43,33 +44,35 @@ class ZSC{
     //if not found, returns bytes32[2][2] with empty elements
     _getAccMap(hash){
 
-        let out = this._acc[utils.fromHex( hash )];
-        if (!out) out = [];
+        hash = utils.fromHex( hash );
+        let out = [];
+        if (this._acc[ hash ]) out = clone( this._acc[ hash ] );
 
         for (let i=0; i < 2; i++){
             if (!out[i]) out[i] = new Array (2);
             for (let j=0; j < 2; j++)
-                if (!out[i][j]) out[i][j] = '0x'+Buffer.alloc(32).toString("hex");
+                if (!out[i][j]) out[i][j] = '0x0000000000000000000000000000000000000000000000000000000000000000';
         }
 
         return out;
     }
 
     _setAccMap(hash, value){
-        this._acc[ utils.fromHex(hash) ] = [...value];
+        this._acc[ utils.fromHex(hash) ] = clone(value);
     }
 
     //if not found returns bytes32[2][2] with empty bytes
     _getpTransfers(hash){
 
-        let out = this._pTransfers[ utils.fromHex( hash ) ];
-        if ( !out ) out = [];
+        hash = utils.fromHex( hash );''
+
+        let out = [];
+        if (this._pTransfers[ hash ]) out = clone( this._pTransfers[ hash ] );
 
         for (let i=0; i < 2; i++){
-
             if (!out[i]) out[i] = new Array (2);
             for (let j=0; j < 2; j++)
-                if (!out[i][j]) out[i][j] = '0x'+Buffer.alloc(32).toString("hex");
+                if (!out[i][j]) out[i][j] = '0x0000000000000000000000000000000000000000000000000000000000000000';
         }
 
         return out;
@@ -77,10 +80,12 @@ class ZSC{
 
     _setpTransfers(hash, value, index){
 
-        if (index === undefined) this._pTransfers[ utils.fromHex(hash) ] = [...value];
+        hash = utils.fromHex(hash);
+
+        if (index === undefined) this._pTransfers[ hash ] = clone(value);
         else {
-            if (!this._pTransfers[ utils.fromHex(hash) ]) this._pTransfers[ utils.fromHex(hash) ] = [];
-            this._pTransfers[ utils.fromHex(hash) ][index] = [...value];
+            if (!this._pTransfers[ hash ]) this._pTransfers[ hash ] = [];
+            this._pTransfers[ hash ][index] = clone(value);
         }
     }
 
@@ -138,12 +143,6 @@ class ZSC{
 
         // accounts = new bytes32[2][2][](size);
         const accounts = [];
-        for (let i=0; i < 2;i++) {
-            accounts[i] = new Array(2);
-            for (let j = 0; j < 2; j++)
-                accounts[i][j] = new Array(size);
-        }
-
 
         for (let i=0; i < size; i++){
 

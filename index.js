@@ -19,21 +19,22 @@ async function run(){
         if (block.height === 1)
             await alice.deposit(1000);
 
-        if (block.height === 10)
-            await alice.withdraw(10);
-
         if (block.height === 20)
             await alice.withdraw(10);
 
-        // if (block.height === 10)
-        //     await alice.transfer("Bob", 100)
+        if (block.height === 40)
+            await alice.withdraw(10);
 
+        if (block.height === 60)
+            await alice.transfer("Bob", 100);
+
+        if (block.height === 80)
+            await alice.transfer("Bob", 100);
+
+        // if (block.height === 60)
+        //     await bob.withdraw(15);
 
     });
-
-    // //await alice.withdraw(10);
-    //
-
     //
     //
     // console.log("transfer1");

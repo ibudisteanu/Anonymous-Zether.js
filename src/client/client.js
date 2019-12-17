@@ -60,27 +60,29 @@ class Client {
 
     onReceivedTransfer(account, parties, transaction ){
 
-        for (let i=0; i < parties.length; i++){
+        console.warn('onReceivedTransfer');
 
-            const party = parties[i];
-            if (!this.match(account.keypair['y'], party)) continue;
-
-            account._state = account._simulate(block.timestamp);
-
-            var inputs;
-            zsc._jsonInterface.forEach((element) => {
-                if (element['name'] == "transfer")
-                    inputs = element['inputs'];
-            });
-
-            var parameters = web3.eth.abi.decodeParameters(inputs, "0x" + transaction.input.slice(10));
-            var value = utils.readBalance(bn128.unserialize(parameters['C'][i]).neg(), bn128.unserialize(parameters['D']).neg(), account.keypair['x']);
-            if (value > 0) {
-                account._state.pending += value;
-                console.log("Transfer of " + value + " received! Balance now " + (account._state.available + account._state.pending) + ".");
-            }
-
-        }
+        // for (let i=0; i < parties.length; i++){
+        //
+        //     const party = parties[i];
+        //     if (!this.match(account.keypair['y'], party)) continue;
+        //
+        //     account._state = account._simulate(block.timestamp);
+        //
+        //     var inputs;
+        //     zsc._jsonInterface.forEach((element) => {
+        //         if (element['name'] == "transfer")
+        //             inputs = element['inputs'];
+        //     });
+        //
+        //     var parameters = web3.eth.abi.decodeParameters(inputs, "0x" + transaction.input.slice(10));
+        //     var value = utils.readBalance(bn128.unserialize(parameters['C'][i]).neg(), bn128.unserialize(parameters['D']).neg(), account.keypair['x']);
+        //     if (value > 0) {
+        //         account._state.pending += value;
+        //         console.log("Transfer of " + value + " received! Balance now " + (account._state.available + account._state.pending) + ".");
+        //     }
+        //
+        // }
 
     }
 
@@ -205,14 +207,25 @@ class Client {
         var proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair['x'], r, value, state.available - value, index);
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
-        return Blockchain.mining.includeTx(async (block)=>{
 
-            await ZSC.transfer( {block}, C, D, y, u, proof);
+        const tx = new Transaction({blockchain: Blockchain});
+        tx.onValidation = ({block, tx})=> {
+            return ZSC.transfer( {block}, C, D, y, u, proof);
+        };
 
-            account._state = account._simulate(); // have to freshly call it
-            account._state.nonceUsed = true;
-            account._state.pending -= value;
-            console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+        Blockchain.mining.includeTx(tx);
+
+        return new Promise((resolve)=>{
+
+            tx.onProcess = ()=>{
+
+                account._state = account._simulate(); // have to freshly call it
+                account._state.nonceUsed = true;
+                account._state.pending -= value;
+                console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+
+                resolve(value);
+            };
 
         });
 
@@ -241,11 +254,10 @@ class Client {
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
 
-        // if (wait > 0) {
-        //     console.log("Initiating withdrawal.");
-        //     return utils.sleep(wait).then(() => this.withdraw(value));
-        // }
-
+        if (3100 > wait) { // determined empirically. IBFT, block time 1
+            console.log("Initiating withdrawal.");
+            return utils.sleep(wait).then(() => this.withdraw(value));
+        }
 
         const result = ZSC.simulateAccounts( [account.keypair['y']], this._getEpoch() );
 

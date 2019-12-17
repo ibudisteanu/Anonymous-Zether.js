@@ -11,18 +11,6 @@ class Service {
 
     proveTransfer (CLn, CRn, C, D, y, epoch, sk, r, bTransfer, bDiff, index) { // no longer async.
 
-        console.log('CLn', CLn);
-        console.log('CRn', CRn);
-        console.log( 'C', C );
-        console.log( 'D', D );
-        console.log( 'y', y );
-        console.log( 'epoch', epoch);
-        console.log( 'sk', sk.toString(16) );
-        console.log( 'r', r.toString(16) );
-        console.log( "bTransfer", bTransfer );
-        console.log( "bDiff", bDiff);
-        console.log( "index", index);
-
         // CLn, CRn, Y, x are "live" (point, BN etc)
         // epoch, bTransfer, bDiff, index are "plain / primitive" JS types.
         var statement = {};
