@@ -292,7 +292,7 @@ class ZSC{
     _rollOver({block}, yHash ){
 
         let e = Math.floor( block.timestamp / consts.BLOCK_TIME_OUT / consts.EPOCH_LENGTH);
-        console.log("eeeeeeeeeeeepoch", e);
+        console.log("rollOver epoch", e);
 
         if (this._getLastRollOver(yHash) < e) {
 

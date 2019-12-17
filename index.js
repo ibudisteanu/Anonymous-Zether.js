@@ -23,11 +23,8 @@ async function run(){
             await alice.withdraw(10);
 
         if (block.height === 20)
-            await alice.withdraw(10);
+            await alice.transfer("Bob", 100);
 
-        // if (block.height === 30)
-        //     await alice.transfer("Bob", 100);
-        //
         // if (block.height === 40)
         //     await alice.withdraw(10);
 
