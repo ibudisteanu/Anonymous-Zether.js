@@ -1,6 +1,6 @@
 # Anonymous Zether in Javascript
 
-Zether solidity contracts developed by J.P. Morgan and implemented in pure Javascript.
+Anonymous Zether solidity contracts developed by J.P. Morgan and implemented in pure Javascript.
 
 Todo by priorities:
 
@@ -10,6 +10,12 @@ Additionally, we could add a few more features:
 
     1. Proving the amount to the receiver without revealing the sender address.
 
+# References
+
+1. J.P. Morgan implementation of Zether https://github.com/jpmorganchase/anonymous-zether
+2. J.P. Morgan - Anonymous Zether Proposal and Tehnical Report https://github.com/jpmorganchase/anonymous-zether/blob/master/docs/AnonZether.pdf
+3. J.P. Morgan Additional features on Zether https://github.com/jpmorganchase/anonymous-zether/blob/master/docs/AnonZether.pdf
+4. Zether: Towards Privacy in a Smart Contract World https://crypto.stanford.edu/~buenz/papers/zether.pdf
 
 ## Special thanks
 
