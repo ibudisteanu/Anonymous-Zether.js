@@ -1,5 +1,6 @@
 
 const BN = require('bn.js');
+const clone = require('clone');
 
 const consts = require('./../consts');
 const utils = require('../utils/utils.js');
@@ -29,25 +30,25 @@ class Client {
 
         this.service = new Service();
 
-        ZSC.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
+        //ZSC.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
 
     }
 
     async initialize (secret) {
 
         if (secret === undefined) {
-            var keypair = utils.createAccount();
+            const keypair = utils.createAccount();
             this.account.keypair = keypair;
             console.log("New account generated.");
 
         } else {
 
-            var x = new BN(secret.slice(2), 16).toRed(bn128.q);
-            this.account.keypair = { 'x': x, 'y': utils.determinePublicKey(x) };
+            const x = new BN(secret.slice(2), 16).toRed(bn128.q);
+            this.account.keypair = { x, 'y': utils.determinePublicKey(x) };
 
             const result = ZSC.simulateAccounts([this.account.keypair['y']], consts.getEpoch() + 1);
 
-            var simulated = result[0];
+            const simulated = result[0];
             this.account._state.available = utils.readBalance(bn128.unserialize(simulated[0]), bn128.unserialize(simulated[1]), this.account.keypair['x']);
             console.log("Account recovered successfully.");
 
@@ -55,31 +56,29 @@ class Client {
 
     };
 
-    onReceivedTransfer(account, parties, transaction ){
+    //parties = y
+    onReceivedTransfer( {block, params: { y, D, C }, tx } ){
 
         console.warn('onReceivedTransfer');
 
-        // for (let i=0; i < parties.length; i++){
-        //
-        //     const party = parties[i];
-        //     if (!this.match(account.keypair['y'], party)) continue;
-        //
-        //     account._state = account._simulate(block.timestamp);
-        //
-        //     var inputs;
-        //     zsc._jsonInterface.forEach((element) => {
-        //         if (element['name'] == "transfer")
-        //             inputs = element['inputs'];
-        //     });
-        //
-        //     var parameters = web3.eth.abi.decodeParameters(inputs, "0x" + transaction.input.slice(10));
-        //     var value = utils.readBalance(bn128.unserialize(parameters['C'][i]).neg(), bn128.unserialize(parameters['D']).neg(), account.keypair['x']);
-        //     if (value > 0) {
-        //         account._state.pending += value;
-        //         console.log("Transfer of " + value + " received! Balance now " + (account._state.available + account._state.pending) + ".");
-        //     }
-        //
-        // }
+        const parties = y;
+
+        for (let i=0; i < parties.length; i++){
+
+            const party = parties[i];
+
+            if (!this.match( this.account.keypair['y'], party )) continue;
+
+            this.account._state = this.account._simulate(block.timestamp);
+
+
+            const value = utils.readBalance(bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair['x'])
+            if (value > 0) {
+                this.account._state.pending += value;
+                console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
+            }
+
+        }
 
     }
 
@@ -113,7 +112,7 @@ class Client {
         // this expression is meant to be a relatively close upper bound of the time that proving + a few verifications will take, as a function of anonset size
         // this function should hopefully give you good epoch lengths also for 8, 16, 32, etc... if you have very heavy traffic, may need to bump it up (many verifications)
         // i calibrated this on _my machine_. if you are getting transfer failures, you might need to bump up the constants, recalibrate yourself, etc.
-        return Math.ceil(size * Math.log(size) / Math.log(2) * 20 + 5200) + (contract ? 20 : 0);
+        return Math.ceil(size * Math.log(size) / Math.log(2) * 20 + 5200) + (contract ? 200 : 0);
         // the 20-millisecond buffer is designed to give the callback time to fire (see below).
     }
 
@@ -137,7 +136,7 @@ class Client {
             return utils.sleep(wait).then(() => this.transfer(name, value, decoys));
         }
         var size = 2 + decoys.length;
-        var estimated = this.estimate(size, false); // see notes above
+        var estimated = this.estimate(size, true); // see notes above
 
         if (estimated > consts.EPOCH_LENGTH * 1000)
             throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + consts.EPOCH_LENGTH + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(estimate(size, true) / 1000) + " seconds.";
@@ -209,11 +208,14 @@ class Client {
         Blockchain.mining.includeTx(tx);
 
 
-        tx.onProcess = ()=>{
+        tx.onProcess = ({block})=>{
 
             account._state = account._simulate(); // have to freshly call it
             account._state.nonceUsed = true;
             account._state.pending -= value;
+
+            ZSC.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, proof }} );
+
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
         };

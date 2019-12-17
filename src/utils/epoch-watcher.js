@@ -4,7 +4,7 @@ class EpochWatcher{
 
     constructor(){
 
-        setInterval( this.tick, 500 );
+        setInterval( this.tick, 100 );
 
         this._prevEpoch = undefined;
 
@@ -15,7 +15,7 @@ class EpochWatcher{
         const epoch = consts.getEpoch();
 
         if (this._prevEpoch !== epoch){
-            console.warn('EPOCH', epoch);
+            console.warn('EPOCH', epoch % 1000);
             this._prevEpoch = epoch;
         }
 

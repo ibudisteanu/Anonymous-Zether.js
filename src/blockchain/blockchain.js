@@ -30,7 +30,7 @@ class Blockchain{
 
     async pushBlock(block){
 
-        console.info('Block pushed', block.height, ' txs ', block.transactions.length, '  ', consts.getEpoch(block.timestamp), '  ',  );
+        console.info('Block', block.height, ' TX ', block.transactions.length , '  ', consts.getEpoch(block.timestamp )% 1000, '  ',  );
 
         this._blocks[ this.getHeight()+1 ] = block;
         this.setHeight( this.getHeight() +1 );

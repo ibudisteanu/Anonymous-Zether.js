@@ -12,13 +12,14 @@ utils.determinePublicKey = (x) => {
 // no "start" parameter for now.
 // CL and CR are "flat", x is a BN.
 utils.readBalance = (CL, CR, x) => {
-    var gB = CL.add(CR.mul(x.neg()));
 
-    var accumulator = bn128.zero;
-    for (var i = 0; i < bn128.B_MAX; i++) {
-        if (accumulator.eq(gB)) {
+    const gB = CL.add(CR.mul(x.neg()));
+
+    let accumulator = bn128.zero;
+    for (let  i = 0; i < bn128.B_MAX; i++) {
+        if (accumulator.eq(gB))
             return i;
-        }
+
         accumulator = accumulator.add(bn128.curve.g);
     }
 };

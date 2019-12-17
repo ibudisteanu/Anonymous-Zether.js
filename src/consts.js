@@ -1,6 +1,6 @@
 const consts = {
     BLOCK_TIME_OUT: 1000,
-    EPOCH_LENGTH: 6,
+    EPOCH_LENGTH: 8,
 };
 
 consts.away = () => { // returns ms away from next epoch change

@@ -283,8 +283,6 @@ class ZSC{
 
         this._nonceSet[ utils.fromHex( uHash ) ] = true;
 
-        this.events.emit('transferOccurred', {y} );
-
         return [ C, D, y, u, proof ];
     }
 

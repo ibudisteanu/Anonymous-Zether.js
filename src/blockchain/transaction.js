@@ -16,7 +16,7 @@ class Transaction{
         await this.onValidation({ block: block, tx: this, blockchain: this._blockchain });
 
         if (this.onProcess)
-            this.onProcess();
+            this.onProcess({block, tx: this, blockchain: this._blockchain});
 
     }
 
