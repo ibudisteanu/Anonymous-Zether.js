@@ -31,24 +31,29 @@ class GeneratorParams{
 
         this.g = paramData.g;
 
-        if ( typeof(h) == 'number') {
+        if ( typeof h == 'number') {
 
             const number = h;
+
             this.h = paramData.h;
-            this.gs = new GeneratorVector(paramData.gs.slice(number));
-            this.hs = new GeneratorVector(paramData.hs.slice(number));
+            this.gsVector = new GeneratorVector(paramData.gs.slice(0, number));
+            this.hsVector = new GeneratorVector(paramData.hs.slice(0, number));
+
         } else {
             this.h = h;
-            this.gs = gs;
-            this.hs = hs;
+            this.gsVector = gs;
+            this.hsVector = hs;
         }
+
+        this.gs = this.gsVector.getVector();
+        this.hs = this.hsVector.getVector();
 
     }
 
     commit (gExp, hExp, blinding) {
         var result = this.h.mul(blinding);
-        var gsVector = this.gs.getVector();
-        var hsVector = this.hs.getVector();
+        var gsVector = this.gsVector.getVector();
+        var hsVector = this.hsVector.getVector();
         gExp.getVector().forEach((gExp, i) => {
             result = result.add(gsVector[i].mul(gExp));
         });
@@ -61,8 +66,8 @@ class GeneratorParams{
     commitRows (exp, blinding) { // exp is an m * 2 array...
 
         var result = this.h.mul(blinding);
-        var gsVector = this.gs.getVector();
-        var hsVector = this.hs.getVector();
+        var gsVector = this.gsVector.getVector();
+        var hsVector = this.hsVector.getVector();
 
         exp.forEach((exp_i, i) => {
             var expVector = exp_i.getVector();
@@ -80,10 +85,10 @@ class GeneratorParams{
         return this.h;
     };
     getGs () {
-        return this.gs;
+        return this.gsVector;
     };
     getHs () {
-        return this.hs;
+        return this.hsVector;
     };
 }
 

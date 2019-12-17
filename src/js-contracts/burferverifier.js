@@ -2,7 +2,7 @@ const bn128 = require("./../utils/bn128");
 const utils = require('./../utils/utils');
 const ABICoder = require('web3-eth-abi');
 
-const { FieldVector, GeneratorVector, AdvancedMath } = require('./../prover/algebra.js');
+const { FieldVector, AdvancedMath } = require('./../prover/algebra.js');
 const GeneratorParams = require('./../prover/generator-params');
 
 const G1Point = utils.G1Point;
@@ -18,8 +18,8 @@ const SigmaAuxiliaries = require('./../prover/schemas/sigma-auxiliaries');
 
 const CommonVerifier = require('./common-verifiers');
 
-const g_n = 5;
-const g_m = 32;
+const g_n = utils.gBurn_n;
+const g_m = utils.gBurn_m;
 
 class BurnVerifier{
 
@@ -27,7 +27,7 @@ class BurnVerifier{
 
         this.params = new GeneratorParams(g_m);
 
-        this._commonVerifier = new CommonVerifier( 'burner', this.g, this.h, this.gs, this.hs, g_m, g_n);
+        this._commonVerifier = new CommonVerifier( 'burner', this.params, g_m, g_n);
 
     }
 
@@ -117,15 +117,15 @@ class BurnVerifier{
         burnAuxiliaries.tEval = proof.tCommits.getVector()[0].mul( burnAuxiliaries.x).add( proof.tCommits.getVector()[1].mul( burnAuxiliaries.x.redMul(burnAuxiliaries.x) )); // replace with "commit"?
 
         const sigmaAuxiliaries = new SigmaAuxiliaries();
-        sigmaAuxiliaries.A_y = this.g.mul( BNFieldfromHex(proof.s_sk) ).add( statement.y.mul( BNFieldfromHex(proof.c).redNeg() ));
+        sigmaAuxiliaries.A_y = this.params.g.mul( BNFieldfromHex(proof.s_sk) ).add( statement.y.mul( BNFieldfromHex(proof.c).redNeg() ));
         sigmaAuxiliaries.gEpoch = utils.gEpoch( statement.epoch );
 
         sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( BNFieldfromHex(proof.s_sk)).add( statement.u.mul( BNFieldfromHex(proof.c).redNeg()));
         sigmaAuxiliaries.c_commit = statement.CRn.add( proof.CRnPrime ).mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.add( proof.CLnPrime ).mul( BNFieldfromHex(proof.c).redNeg())).mul( burnAuxiliaries.zs[0] );
 
-        sigmaAuxiliaries.A_t = this.g.mul(  burnAuxiliaries.t ).add( this.h.mul( BNFieldfromHex(proof.tauX) ) ).add( burnAuxiliaries.tEval.neg() ).mul( BNFieldfromHex(proof.c) ).add( sigmaAuxiliaries.c_commit);
-        sigmaAuxiliaries.A_CLn = this.g.mul( BNFieldfromHex(proof.s_vDiff) ).add( statement.CRn.mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.mul( BNFieldfromHex(proof.c).redNeg())));
-        sigmaAuxiliaries.A_CLnPrime = this.h.mul( BNFieldfromHex(proof.s_nuDiff) ).add( proof.CRnPrime.mul( BNFieldfromHex(proof.s_sk) )).add(  proof.CLnPrime.mul( BNFieldfromHex(proof.c).redNeg()));
+        sigmaAuxiliaries.A_t = this.params.g.mul(  burnAuxiliaries.t ).add( this.params.h.mul( BNFieldfromHex(proof.tauX) ) ).add( burnAuxiliaries.tEval.neg() ).mul( BNFieldfromHex(proof.c) ).add( sigmaAuxiliaries.c_commit);
+        sigmaAuxiliaries.A_CLn = this.params.g.mul( BNFieldfromHex(proof.s_vDiff) ).add( statement.CRn.mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.mul( BNFieldfromHex(proof.c).redNeg())));
+        sigmaAuxiliaries.A_CLnPrime = this.params.h.mul( BNFieldfromHex(proof.s_nuDiff) ).add( proof.CRnPrime.mul( BNFieldfromHex(proof.s_sk) )).add(  proof.CLnPrime.mul( BNFieldfromHex(proof.c).redNeg()));
 
         sigmaAuxiliaries.c = utils.hash(ABICoder.encodeParameters([
             'bytes32',

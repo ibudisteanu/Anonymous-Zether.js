@@ -1,4 +1,5 @@
 const bn128 = require('./../utils/bn128')
+const consts = require('./../consts');
 
 class Account {
 
@@ -17,13 +18,13 @@ class Account {
 
     }
 
-    _simulate (timestamp, epoch) {
+    _simulate (timestamp) {
 
         var updated = {};
         updated.available = this._state.available;
         updated.pending = this._state.pending;
         updated.nonceUsed = this._state.nonceUsed;
-        updated.lastRollOver = this.client._getEpoch(timestamp);
+        updated.lastRollOver = consts.getEpoch(timestamp);
 
         if (this._state.lastRollOver < updated.lastRollOver)
         {

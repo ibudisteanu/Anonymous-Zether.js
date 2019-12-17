@@ -1,6 +1,7 @@
 const ABICoder = require('web3-eth-abi');
 
-const { GeneratorParams, FieldVector } = require('./algebra.js');
+const { FieldVector } = require('./algebra.js');
+const GeneratorParams = require('./generator-params');
 
 const InnerProductProof = require('./schemas/inner-product-proof');
 

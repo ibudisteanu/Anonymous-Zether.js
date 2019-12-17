@@ -23,7 +23,6 @@ class Client {
 
         this._transfers = new Set();
 
-        this._epochLength = undefined;
 
         this.account = new Account(this);
         this.friends = new Friends(this);
@@ -36,8 +35,6 @@ class Client {
 
     async initialize (secret) {
 
-         this._epochLength = ZSC.epochLength;
-
         if (secret === undefined) {
             var keypair = utils.createAccount();
             this.account.keypair = keypair;
@@ -48,7 +45,7 @@ class Client {
             var x = new BN(secret.slice(2), 16).toRed(bn128.q);
             this.account.keypair = { 'x': x, 'y': utils.determinePublicKey(x) };
 
-            const result = ZSC.simulateAccounts([this.account.keypair['y']], this._getEpoch() + 1);
+            const result = ZSC.simulateAccounts([this.account.keypair['y']], consts.getEpoch() + 1);
 
             var simulated = result[0];
             this.account._state.available = utils.readBalance(bn128.unserialize(simulated[0]), bn128.unserialize(simulated[1]), this.account.keypair['x']);
@@ -102,17 +99,13 @@ class Client {
 
         Blockchain.mining.includeTx(tx);
 
-        return new Promise((resolve)=>{
 
-            tx.onProcess = ()=>{
-                account._state = account._simulate(); // have to freshly call it
-                account._state.pending += value;
-                console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+        tx.onProcess = ()=>{
+            account._state = account._simulate(); // have to freshly call it
+            account._state.pending += value;
+            console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
-                resolve(value);
-            };
-
-        });
+        };
 
     }
 
@@ -132,7 +125,7 @@ class Client {
         var state = account._simulate();
         if (value > state.available + state.pending)
             throw "Requested transfer amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
-        var wait = this._away();
+        var wait = consts.away();
         var seconds = Math.ceil(wait / 1000);
         var plural = seconds == 1 ? "" : "s";
         if (value > state.available) {
@@ -146,8 +139,8 @@ class Client {
         var size = 2 + decoys.length;
         var estimated = this.estimate(size, false); // see notes above
 
-        if (estimated > this._epochLength * 1000)
-            throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + this._epochLength + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(estimate(size, true) / 1000) + " seconds.";
+        if (estimated > consts.EPOCH_LENGTH * 1000)
+            throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + consts.EPOCH_LENGTH + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(estimate(size, true) / 1000) + " seconds.";
 
         if (estimated > wait) {
             console.log(wait < 3100 ? "Initiating transfer." : "Your transfer has been queued. Please wait " + seconds + " second" + plural + ", until the next epoch...");
@@ -194,7 +187,7 @@ class Client {
         } // make sure you and your friend have opposite parity
 
 
-        const result = ZSC.simulateAccounts(y, this._getEpoch() );
+        const result = ZSC.simulateAccounts(y, consts.getEpoch() );
 
         var r = bn128.randomScalar();
         var C = y.map((party, i) => bn128.curve.g.mul(i == index[0] ? new BN(value) : i == index[1] ? new BN(-value) : new BN(0)).add(bn128.unserialize(party).mul(r)));
@@ -215,19 +208,15 @@ class Client {
 
         Blockchain.mining.includeTx(tx);
 
-        return new Promise((resolve)=>{
 
-            tx.onProcess = ()=>{
+        tx.onProcess = ()=>{
 
-                account._state = account._simulate(); // have to freshly call it
-                account._state.nonceUsed = true;
-                account._state.pending -= value;
-                console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+            account._state = account._simulate(); // have to freshly call it
+            account._state.nonceUsed = true;
+            account._state.pending -= value;
+            console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
-                resolve(value);
-            };
-
-        });
+        };
 
 
     };
@@ -242,7 +231,7 @@ class Client {
             throw "Requested withdrawal amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
 
 
-        var wait = this._away();
+        var wait = consts.away();
         var seconds = Math.ceil(wait / 1000);
         var plural = seconds == 1 ? "" : "s";
         if (value > state.available) {
@@ -255,11 +244,11 @@ class Client {
         }
 
         if (3100 > wait) { // determined empirically. IBFT, block time 1
-            console.log("Initiating withdrawal.");
+            console.log("Initiating withdrawal.", wait);
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
 
-        const result = ZSC.simulateAccounts( [account.keypair['y']], this._getEpoch() );
+        const result = ZSC.simulateAccounts( [account.keypair['y']], consts.getEpoch() );
 
         var simulated = result[0];
         var CLn = bn128.serialize(bn128.unserialize(simulated[0]).add(bn128.curve.g.mul(new BN(-value))));
@@ -274,32 +263,19 @@ class Client {
 
         Blockchain.mining.includeTx(tx);
 
-        return new Promise((resolve)=>{
 
-            tx.onProcess = ()=>{
+        tx.onProcess = ()=>{
 
-                account._state = account._simulate(); // have to freshly call it
-                account._state.nonceUsed = true;
-                account._state.pending -= value;
+            account._state = account._simulate(); // have to freshly call it
+            account._state.nonceUsed = true;
+            account._state.pending -= value;
 
-                console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
-
-
-                resolve(value);
-            };
-
-        });
-
-    };
-
-    _away () { // returns ms away from next epoch change
-        var current = (new Date).getTime();
-        return Math.ceil(current / (this._epochLength * consts.BLOCK_TIME_OUT)) * (this._epochLength * consts.BLOCK_TIME_OUT) - current;
-    };
+            console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
 
-    _getEpoch (timestamp) {
-        return Math.floor(( timestamp === undefined ? (new Date).getTime() : timestamp) / consts.BLOCK_TIME_OUT / this._epochLength);
+        };
+
+
     };
 
     match (address, candidate) {

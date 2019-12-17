@@ -13,6 +13,7 @@ class Block {
     async executeTransactions(){
 
         for (let i=0; i < this.transactions.length; i++){
+
             const tx = this.transactions[i];
 
             await tx.processTx({block: this});

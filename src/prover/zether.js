@@ -3,7 +3,9 @@ const BN = require('bn.js');
 
 const bn128 = require('../utils/bn128.js');
 const utils = require('../utils/utils.js');
-const { Convolver, FieldVector, FieldVectorPolynomial, GeneratorParams, GeneratorVector, PolyCommitment, Polynomial } = require('./algebra.js');
+const { Convolver, FieldVector, FieldVectorPolynomial, GeneratorVector, PolyCommitment, Polynomial } = require('./algebra.js');
+const GeneratorParams = require('./../prover/generator-params');
+
 const InnerProductProver = require('./innerproduct');
 
 const ZetherProof = require('./schemas/zether-proof');

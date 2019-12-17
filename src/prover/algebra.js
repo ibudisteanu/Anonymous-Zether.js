@@ -291,4 +291,4 @@ class AdvancedMath{
 }
 
 
-module.exports = { GeneratorParams, FieldVector, GeneratorVector, Convolver, FieldVectorPolynomial, PolyCommitment, Polynomial, AdvancedMath: new AdvancedMath() };
+module.exports = { FieldVector, GeneratorVector, Convolver, FieldVectorPolynomial, PolyCommitment, Polynomial, AdvancedMath: new AdvancedMath() };

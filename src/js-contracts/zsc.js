@@ -33,7 +33,6 @@ class ZSC{
         this._nonceSet = {};
 
         this.lastGlobalUpdate = 0;
-        this.epochLength = 6;
 
         this.bTotal = 0;
 
@@ -64,7 +63,7 @@ class ZSC{
     //if not found returns bytes32[2][2] with empty bytes
     _getpTransfers(hash){
 
-        hash = utils.fromHex( hash );''
+        hash = utils.fromHex( hash );
 
         let out = [];
         if (this._pTransfers[ hash ]) out = clone( this._pTransfers[ hash ] );
@@ -294,7 +293,7 @@ class ZSC{
     // function _rollOver(bytes32 yHash) internal {
     _rollOver({block}, yHash ){
 
-        let e = Math.floor( block.timestamp / consts.BLOCK_TIME_OUT / this.epochLength);
+        let e = Math.floor( block.timestamp / consts.BLOCK_TIME_OUT / consts.EPOCH_LENGTH);
         console.log("eeeeeeeeeeeepoch", e);
 
         if (this._getLastRollOver(yHash) < e) {

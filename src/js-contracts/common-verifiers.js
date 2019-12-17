@@ -14,11 +14,9 @@ const { FieldVector, GeneratorVector, AdvancedMath } = require('./../prover/alge
 
 class CommonVerifiers{
 
-    constructor(type, g,h,gs,hs,m,n){
-        this.g = g;
-        this.h = h;
-        this.gs = gs;
-        this.hs = hs;
+    constructor(type, params, m,n){
+
+        this.params = params;
         this._n = n;
         this._m = m;
         this._type = type;
@@ -35,12 +33,12 @@ class CommonVerifiers{
         ], [
             bn128.bytes(sigmaAuxiliaries.c),
         ]));
-        ipAuxiliaries.u_x = this.g.mul( ipAuxiliaries.o );
-        ipAuxiliaries.hPrimes = this.hs.map( (it, index) => it.mul( auxiliaries.ys[index].redInvm()  ) ); //hadamardInv
+        ipAuxiliaries.u_x = this.params.g.mul( ipAuxiliaries.o );
+        ipAuxiliaries.hPrimes = this.params.hs.map( (it, index) => it.mul( auxiliaries.ys[index].redInvm()  ) ); //hadamardInv
         ipAuxiliaries.hExp = new FieldVector(auxiliaries.ys).times(  auxiliaries.z ).add( new FieldVector( auxiliaries.twoTimesZSquared ) ).getVector();
 
-        ipAuxiliaries.P = proof.A.add(  proof.S.mul( auxiliaries.x )).add( new GeneratorVector(this.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
-        ipAuxiliaries.P = ipAuxiliaries.P.add( this.h.mul( BNFieldfromHex(proof.mu).redNeg() ));
+        ipAuxiliaries.P = proof.A.add(  proof.S.mul( auxiliaries.x )).add( new GeneratorVector(this.params.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
+        ipAuxiliaries.P = ipAuxiliaries.P.add( this.params.h.mul( BNFieldfromHex(proof.mu).redNeg() ));
         ipAuxiliaries.P = ipAuxiliaries.P.add( ipAuxiliaries.u_x.mul( BNFieldfromHex(proof.tHat) ));
 
         // begin inner product verification
@@ -84,7 +82,7 @@ class CommonVerifiers{
         let gTemp = G1Point0();
         let hTemp = G1Point0();
         for (let i = 0; i < this._m; i++) {
-            gTemp = gTemp.add( this.gs[i].mul( ipAuxiliaries.otherExponents[i] ) );
+            gTemp = gTemp.add( this.params.gs[i].mul( ipAuxiliaries.otherExponents[i] ) );
             hTemp = hTemp.add( ipAuxiliaries.hPrimes[i].mul( ipAuxiliaries.otherExponents[ this._m - 1 - i]));
         }
         const cProof = gTemp.mul( BNFieldfromHex(ipProof.a) ).add( hTemp.mul( BNFieldfromHex(ipProof.b) )).add( ipAuxiliaries.u_x.mul( BNFieldfromHex(ipProof.a).redMul( BNFieldfromHex(ipProof.b) )));

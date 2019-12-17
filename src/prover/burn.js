@@ -3,7 +3,8 @@ const BN = require('bn.js');
 
 const bn128 = require('../utils/bn128.js');
 const utils = require('../utils/utils.js');
-const { GeneratorParams, GeneratorVector, FieldVector, FieldVectorPolynomial, PolyCommitment } = require('./algebra.js');
+const { GeneratorVector, FieldVector, FieldVectorPolynomial, PolyCommitment } = require('./algebra.js');
+const GeneratorParams = require('./../prover/generator-params');
 
 const InnerProductProver = require('./innerproduct');
 const BurnProof = require('./schemas/burn-proof');
@@ -148,8 +149,14 @@ class BurnProver {
         var u_x = this.params.getG().mul(o); // Begin Protocol 1. this is u^x in Protocol 1. use our g for their u, our o for their x.
         var ZPrime = Z.add(u_x.mul(proof.tHat)); // corresponds to P' in protocol 1.
         var primeBase = new GeneratorParams(u_x, gs, hsPrime);
-        var ipStatement = { 'primeBase': primeBase, 'P': ZPrime };
-        var ipWitness = { 'l': lPoly.evaluate(x), 'r': rPoly.evaluate(x) };
+        var ipStatement = {
+            primeBase: primeBase,
+            P: ZPrime
+        };
+        var ipWitness = {
+            l: lPoly.evaluate(x),
+            r: rPoly.evaluate(x)
+        };
         proof.ipProof = this.ipProver.generateProof(ipStatement, ipWitness, o);
 
         return proof;

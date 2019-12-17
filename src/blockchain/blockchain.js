@@ -1,5 +1,6 @@
 const Block = require('./block');
 const Mining = require('./mining');
+const consts = require('../consts');
 
 const EventEmitter = require('events').EventEmitter;
 
@@ -29,14 +30,15 @@ class Blockchain{
 
     async pushBlock(block){
 
-        console.info('Block pushed', block.height, ' txs ', block.transactions.length, '  ', block.timestamp, '  ',  );
+        console.info('Block pushed', block.height, ' txs ', block.transactions.length, '  ', consts.getEpoch(block.timestamp), '  ',  );
 
         this._blocks[ this.getHeight()+1 ] = block;
         this.setHeight( this.getHeight() +1 );
 
         await block.executeTransactions();
 
-        this.events.emit('new-block', {block});
+        if (this.onNewBlock)
+            await this.onNewBlock({block});
     }
 
     getHeight(){
