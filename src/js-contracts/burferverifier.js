@@ -1,7 +1,9 @@
 const bn128 = require("./../utils/bn128");
 const utils = require('./../utils/utils');
 const ABICoder = require('web3-eth-abi');
+
 const { FieldVector, GeneratorVector, AdvancedMath } = require('./../prover/algebra.js');
+const GeneratorParams = require('./../prover/generator-params');
 
 const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
@@ -16,19 +18,14 @@ const SigmaAuxiliaries = require('./../prover/schemas/sigma-auxiliaries');
 
 const CommonVerifier = require('./common-verifiers');
 
-const FieldParams = require('./field-params');
-
 const g_n = 5;
 const g_m = 32;
 
 class BurnVerifier{
 
     constructor(){
-        this.g = FieldParams.g;
-        this.h = FieldParams.h;
 
-        this.gs = FieldParams.gs.slice(0, g_m);
-        this.hs = FieldParams.hs.slice(0, g_m);
+        this.params = new GeneratorParams(g_m);
 
         this._commonVerifier = new CommonVerifier( 'burner', this.g, this.h, this.gs, this.hs, g_m, g_n);
 
@@ -36,26 +33,6 @@ class BurnVerifier{
 
     verifyBurn(CLn, CRn, y, bTransfer, epoch, u, sender, proof){
 
-        // CLn = [
-        //     "0x14b47652ee068b8c898b14cf3aa5c5b33dab284e4ef8aecdb8bfffcc93c9d2f0",
-        //     "0x05f10accf64b9cb382563097b8805abe504d26c04701d99d00b8ed888df81f24"
-        // ];
-        // CRn = [
-        //     "0x1b7721f698852abd50a3761fd5cae960df1f78d65f8cf9655a71ab6c0911b67c",
-        //     "0x0d24232b82330d9dbdffe458c3ade576f55af32aab92b67dd5a3b8a1d9407543"
-        // ];
-        // y = [
-        //     "0x300948553ca0a1fdf8ca2ef2d0845d345e6aeb57da1e0ade636ac26aa39a9290",
-        //     "0x305d63c5d3581440bef767a68097f08214b1c3aafb6cebd5ba571f54f30946d4"
-        // ];
-        // bTransfer = 10;
-        // epoch = 262745;
-        // u = [
-        //     "0x2f40f8180f80f0ef95de55cb7477878e7ff5e5a2a224525518814ab17a6ebb0f",
-        //     "0x2510171729ed1fa0d00d63474e45cbf03303af5ad1ec054b6f00b6a9ea35e7d1"
-        // ];
-        // sender = "0x620CB390Cd936a8E6de0270ed3254a0779475b4C";
-        // proof = "0x16415f76c49525276d36db0c4c1a2a51cc1c83d9cbc8668573f779f345d12c492fccf3b394ecf7daeb3b89e5b1a9fa46f194fd18332fca580cb651003444f149249adcc1baddbfc5401d53f3452fb954962be87db83e030940a87cef5dd156a80a001b9c9095b7529df91b58e4293f9d1d84a6f7f1b6ccdcc185f6f2e511896026901f5d7687c4bf129e42ece911e85cb86bb4739cb8b426c555a716c8fa937e2d5ada9e8a0699958b7055e39a74f54e860336d6b2df606de0ae4bf1f7ea92cb1710bcbd23e3bf296a504cdb92aa7122261761347e3b3264d5e39c0fbdb369e326c2cccf3c01ebd7cc5952aa88cc6480b0609738c6f849a75e991918eccd6df02a0338a981c37bbdd430a1c6fce93ab1deb99b2945f0897bc1f670f4e635f84a23b3edc90a0de34462194dbf7dd88ba208af8c54aebb92f25b7e0fadd48c1c8e25f09668fab41e0f83b84e12e99d78d6e01be830dbdfad3d182e107c12a5aeee1cba6c61c854d148857ba685df4986ddce005870548d59193a555b167684be9118d1e5ba1bd904d7e651415c8c896bddb0923b5a2aa7d505fe49e4f8cd2d39d029f408ea7e886bda1a851bddac2bb5a16b0d2464ad1bef7e82c931edf32ca61e25ba0aab1e54c629c7a31cd31fc4ba3ed5305fd4b1c0d944d5847eda510b0d992e2a0f8570948074ef8a32e51f4fdbd2584faee07ccdeef37cdad10be988fc472512789693fcc736eca417d837483377dd0c2a5189c99090e0fa5a6df6c784b10c1c03eb0e891c0dc0a8a2f044e57872fcd2da6d840816d7be2af0e34dfad87602b51759e858ad1cd8ef288e513fd60a9ea2a24a30b5bb692c32ee115eef334016aadc555c5554d8b8b2613445bffcc3f38fa1f0e76d0f1f7c0aad24ac7e49a02a7e59ff308bfb0b7fd19114e0db39346e72a464b232fadafc740372c19bcbc8";
 
         const statement = new BurnStatement(); // WARNING: if this is called directly in the console,
 

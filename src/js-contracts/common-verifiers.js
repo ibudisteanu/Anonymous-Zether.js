@@ -65,12 +65,12 @@ class CommonVerifiers{
         }
 
         ipAuxiliaries.otherExponents[0] = new BN(1).toRed(bn128.q);
-        for (let i = 0; i < this._n; i++) {
+        for (let i = 0; i < this._n; i++)
             ipAuxiliaries.otherExponents[0] = ipAuxiliaries.otherExponents[0].redMul(ipAuxiliaries.challenges[i]);
-        }
+
         const bitSet = new Array(this._m) ;
         ipAuxiliaries.otherExponents[0] = ipAuxiliaries.otherExponents[0].redInvm();
-        for (let i=0; i < this._m / 2; ++i) {
+        for (let i=0; i < this._m / 2; ++i)
             for (let j = 0; (1 << j) + i < this._m; ++j) {
                 const i1 = i + (1 << j);
                 if (!bitSet[i1]) {
@@ -79,7 +79,7 @@ class CommonVerifiers{
                     bitSet[i1] = true;
                 }
             }
-        }
+
 
         let gTemp = G1Point0();
         let hTemp = G1Point0();
