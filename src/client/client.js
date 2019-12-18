@@ -30,7 +30,7 @@ class Client {
 
         this.service = new Service();
 
-        //ZSC.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
+        ZSC.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
 
     }
 
@@ -60,6 +60,11 @@ class Client {
     onReceivedTransfer( {block, params: { y, D, C }, tx } ){
 
         console.warn('onReceivedTransfer');
+
+        if ( this._transfers[tx.hash]){
+            delete this._transfers[tx.hash];
+            return;
+        }
 
         const parties = y;
 
@@ -91,7 +96,7 @@ class Client {
 
         console.log("Initiating deposit.");
 
-        const tx = new Transaction({blockchain: Blockchain});
+        const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
             return ZSC.fund( {block}, account.keypair['y'], value);
         };
@@ -200,7 +205,7 @@ class Client {
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
 
-        const tx = new Transaction({blockchain: Blockchain});
+        const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
             return ZSC.transfer( {block}, C, D, y, u, proof);
         };
@@ -209,6 +214,8 @@ class Client {
 
 
         tx.onProcess = ({block})=>{
+
+            this._transfers[tx.hash] = tx;
 
             account._state = account._simulate(); // have to freshly call it
             account._state.nonceUsed = true;
@@ -258,7 +265,7 @@ class Client {
         var proof = this.service.proveBurn(CLn, CRn, account.keypair['y'], value, state.lastRollOver, this._home, account.keypair['x'], state.available - value);
         var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
 
-        const tx = new Transaction({blockchain: Blockchain});
+        const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
             return ZSC.burn( {block}, account.keypair['y'], value, u, proof, this._home );
         };

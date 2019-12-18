@@ -12,7 +12,7 @@ Additionally, we could add a few more features:
 
 # References
 
-1. J.P. Morgan implementation of Zether https://github.com/jpmorganchase/anonymous-zether
+1. J.P. Morgan codebase of Zether https://github.com/jpmorganchase/anonymous-zether
 2. J.P. Morgan - Anonymous Zether Proposal and Tehnical Report https://github.com/jpmorganchase/anonymous-zether/blob/master/docs/AnonZether.pdf
 3. J.P. Morgan Additional features on Zether https://github.com/jpmorganchase/anonymous-zether/blob/master/docs/AnonZether.pdf
 4. Zether: Towards Privacy in a Smart Contract World https://crypto.stanford.edu/~buenz/papers/zether.pdf

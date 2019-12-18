@@ -1,8 +1,12 @@
 const Block = require('./block');
+const Transaction = require('./transaction')
+
 const Mining = require('./mining');
 const consts = require('../consts');
+const utils = require('./../utils/utils')
 
 const EventEmitter = require('events').EventEmitter;
+
 
 class Blockchain{
 
@@ -14,6 +18,8 @@ class Blockchain{
         this.mining.start();
 
         this._height = -1;
+
+        this.txCounter = 0;
 
         this.events = new EventEmitter();
     }
@@ -47,6 +53,14 @@ class Blockchain{
 
     setHeight(newValue){
         return this._height = newValue;
+    }
+
+    createTransaction(){
+
+        const counter = this.txCounter++;
+        const tx = new Transaction({blockchain: this, hash: utils.keccak256Simple( counter.toString() ) });
+        return tx;
+
     }
 
 }

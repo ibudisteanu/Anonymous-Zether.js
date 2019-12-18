@@ -1,8 +1,10 @@
 class Transaction{
 
-    constructor({blockchain}){
+    constructor({blockchain, hash}){
 
         this._blockchain = blockchain;
+
+        this.hash = hash;
 
         this.onProcess = undefined;
         this.onValidation = undefined;
