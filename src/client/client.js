@@ -1,6 +1,5 @@
-
 const BN = require('bn.js');
-const clone = require('clone');
+const ABICoder = require('web3-eth-abi');
 
 const consts = require('./../consts');
 const utils = require('../utils/utils.js');
@@ -54,7 +53,7 @@ class Client {
     };
 
     //parties = y
-    onReceivedTransfer( {block, params: { y, D, C }, tx } ){
+    onReceivedTransfer( {block, params: { y, D, C, u, v }, tx } ){
 
         console.warn('onReceivedTransfer');
 
@@ -73,6 +72,19 @@ class Client {
 
             this.account._state = this.account._simulate(block.timestamp);
 
+            //decoding whisper
+            const hash = utils.hash(
+                ABICoder.encodeParameters([
+                    'bytes32[2]',
+                ], [
+                    bn128.serialize( bn128.unserialize(D).mul( utils.BNFieldfromHex ( this.account.keypair.x ) ) ),
+                ])
+            );
+
+            const b = utils.BNFieldfromHex( v ).redSub(  hash  );
+            const whisper = b.toString(10 );
+
+            console.log( "Whisper", whisper );
 
             const value = ZSC.readBalance( bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair.x );
             if (value > 0) {
@@ -169,7 +181,7 @@ class Client {
             y.push(friends[decoy]);
         });
         const index = [];
-        const m = y.length;
+        let m = y.length;
         while (m !== 0) { // https://bost.ocks.org/mike/shuffle/
             const i = Math.floor(Math.random() * m--);
             const temp = y[i];
@@ -201,10 +213,20 @@ class Client {
         const proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, state.available - value, index);
         const u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
+        //whisper the value to the receiver
+        let v = utils.hash(
+            ABICoder.encodeParameters([
+                'bytes32[2]',
+            ], [
+                bn128.serialize( bn128.unserialize( y[ index[1] ] ).mul( r ) ),
+            ])
+        );
+        v = v.redAdd( new BN(value).toRed(bn128.q) );
+        v = bn128.bytes(v);
 
         const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.transfer( {block}, C, D, y, u, proof);
+            return ZSC.transfer( {block}, C, D, y, u, v, proof);
         };
 
 
@@ -219,7 +241,7 @@ class Client {
             account._state.nonceUsed = true;
             account._state.pending -= value;
 
-            ZSC.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, proof }} );
+            ZSC.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, proof }} );
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 

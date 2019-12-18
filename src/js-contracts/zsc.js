@@ -188,7 +188,7 @@ class ZSC{
 
 
     //Transfer is verified
-    transfer( {block}, C, D, y, u, proof){
+    transfer( {block}, C, D, y, u, v, proof){
 
         let size = y.length;
 
