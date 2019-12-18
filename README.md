@@ -8,14 +8,16 @@ Improvements :
 
 Given:
 
-![alt text](https://latex.codecogs.com/gif.latex?b) - balance of transaction
-![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the receiver
-![alt text](https://latex.codecogs.com/gif.latex?y_%7Bi%7D) - public key of the receiver
-![alt text](https://latex.codecogs.com/gif.latex?x_%7Bi%7D) - secret of the receiver
-![alt text](https://latex.codecogs.com/gif.latex?r) - public view key  
+![alt text](https://latex.codecogs.com/gif.latex?b) - balance of transaction\
+![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the receiver\
+![alt text](https://latex.codecogs.com/gif.latex?y_%7Bi%7D) - public key of the receiver\
+![alt text](https://latex.codecogs.com/gif.latex?x_%7Bi%7D) - secret of the receiver\
+![alt text](https://latex.codecogs.com/gif.latex?r) - public view key
 
+Computing the proof hiding the balance for receiver\
 ![alt text](doc/zk-1.gif?raw=true)
 
+Retrieving the secret balance from the sender\
 ![alt text](doc/zk-2.gif?raw=true)
 
 
