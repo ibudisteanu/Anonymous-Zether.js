@@ -6,7 +6,10 @@ Anonymous Zether solidity contracts developed by J.P. Morgan and implemented in 
 
 ### 1. Whisper protocol
 
-Idea suggestion from JP Morgan
+Idea suggestion by Zhou Zhiyao [@zzy96]( https://github.com/zzy96)
+
+
+1.1 Whisper to the receiver:
 
 Given:
 
@@ -17,11 +20,21 @@ Given:
 ![alt text](https://latex.codecogs.com/gif.latex?r) - public view key
 
 Computing the proof hiding the balance for receiver\
-![alt text](doc/zk-1.gif?raw=true)
+![alt text](doc/whisper-receiver-1.gif?raw=true)
 
 Retrieving the secret balance from the sender\
-![alt text](doc/zk-2.gif?raw=true)
+![alt text](doc/whisper-receiver-2.gif?raw=true)
 
+1.2 Whisper to the sender:
+
+![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the sender\
+![alt text](https://latex.codecogs.com/gif.latex?x_%7Bi%7D) - secret of the sender\
+
+Computing the proof hiding the balance for receiver\
+![alt text](doc/whisper-sender-1.gif?raw=true)
+
+Retrieving the secret balance from the sender\
+![alt text](doc/whisper-sender-2.gif?raw=true)
 
 
 ### 2. Todo by priorities:
@@ -51,3 +64,6 @@ Benjamin Diamond
 J.P. Morgan
 [@jpmorganchase]( https://github.com/jpmorganchase)
 
+
+Zhou Zhiyao
+[@zzy96]( https://github.com/zzy96) for the Whisper Protocol
