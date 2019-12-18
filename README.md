@@ -7,12 +7,15 @@ Improvements :
         Idea suggestion from JP Morgan
 
 Given:
- b balance of transaction
- i index of the receiver
- yi public key of the receiver
- xi secret if the receiver
+
+![alt text](https://latex.codecogs.com/gif.latex?b) - balance of transaction
+![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the receiver
+![alt text](https://latex.codecogs.com/gif.latex?y_%7Bi%7D) - public key of the receiver
+![alt text](https://latex.codecogs.com/gif.latex?x_%7Bi%7D) - secret of the receiver
+![alt text](https://latex.codecogs.com/gif.latex?r) - public view key  
 
 ![alt text](doc/zk-1.gif?raw=true)
+
 ![alt text](doc/zk-2.gif?raw=true)
 
 
