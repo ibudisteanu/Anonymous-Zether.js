@@ -50,11 +50,11 @@ class Account {
 
     decodeBalance(){
 
-        const result = ZSC.simulateAccounts([this.keypair.y ], consts.getEpoch() + 1);
+        const result = ZSC.simulateAccounts([ this.keypair.y ], consts.getEpoch() + 1);
 
         const simulated = result[0];
 
-        this._state.available = ZSC.readBalance(bn128.unserialize(simulated[0]), bn128.unserialize(simulated[1]), this.keypair.x );
+        this._state.available = ZSC.readBalance(bn128.unserialize(simulated[0]), bn128.unserialize( simulated[1] ), this.keypair.x );
 
 
     }

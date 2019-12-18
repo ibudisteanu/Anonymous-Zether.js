@@ -399,7 +399,7 @@ class ZSC{
 
     // no "start" parameter for now.
     // CL and CR are "flat", x is a BN.
-    readBalance = (CL, CR, x) => {
+    readBalance (CL, CR, x) {
 
         const gB = CL.add(CR.mul(x.neg()));
 
