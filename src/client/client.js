@@ -70,12 +70,12 @@ class Client {
 
             const party = parties[i];
 
-            if (!this.match( this.account.keypair['y'], party )) continue;
+            if (!this.match( this.account.keypair.y, party )) continue;
 
             this.account._state = this.account._simulate(block.timestamp);
 
 
-            const value = ZSC.readBalance( bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair['x'] );
+            const value = ZSC.readBalance( bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair.x );
             if (value > 0) {
                 this.account._state.pending += value;
                 console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
@@ -96,7 +96,7 @@ class Client {
 
         const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.fund( {block}, account.keypair['y'], value);
+            return ZSC.fund( {block}, account.keypair.y, value);
         };
 
         Blockchain.mining.includeTx(tx);
@@ -161,9 +161,9 @@ class Client {
         var friends = this.friends.show();
         if (!(name in friends))
             throw "Name \"" + name + "\" hasn't been friended yet!";
-        if (this.match(friends[name], account.keypair['y']))
+        if (this.match(friends[name], account.keypair.y))
             throw "Sending to yourself is currently unsupported (and useless!)."
-        var y = [account.keypair['y']].concat([friends[name]]); // not yet shuffled
+        var y = [account.keypair.y].concat([friends[name]]); // not yet shuffled
         decoys.forEach((decoy) => {
             if (!(decoy in friends))
                 throw "Decoy \"" + decoy + "\" is unknown in friends directory!";
@@ -176,7 +176,7 @@ class Client {
             var temp = y[i];
             y[i] = y[m];
             y[m] = temp;
-            if (this.match(temp, account.keypair['y']))
+            if (this.match(temp, account.keypair.y))
                 index[0] = m;
             else if (this.match(temp, friends[name]))
                 index[1] = m;
@@ -199,14 +199,15 @@ class Client {
         C = C.map(bn128.serialize);
         D = bn128.serialize(D);
 
-        var proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair['x'], r, value, state.available - value, index);
-        var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
+        var proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, state.available - value, index);
+        var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
 
         const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
             return ZSC.transfer( {block}, C, D, y, u, proof);
         };
+
 
         Blockchain.mining.includeTx(tx);
 
@@ -255,17 +256,17 @@ class Client {
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
 
-        const result = ZSC.simulateAccounts( [account.keypair['y']], consts.getEpoch() );
+        const result = ZSC.simulateAccounts( [account.keypair.y], consts.getEpoch() );
 
         var simulated = result[0];
         var CLn = bn128.serialize(bn128.unserialize(simulated[0]).add(bn128.curve.g.mul(new BN(-value))));
         var CRn = simulated[1];
-        var proof = this.service.proveBurn(CLn, CRn, account.keypair['y'], value, state.lastRollOver, this._home, account.keypair['x'], state.available - value);
-        var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair['x']));
+        var proof = this.service.proveBurn(CLn, CRn, account.keypair.y, value, state.lastRollOver, this._home, account.keypair.x, state.available - value);
+        var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
         const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.burn( {block}, account.keypair['y'], value, u, proof, this._home );
+            return ZSC.burn( {block}, account.keypair.y, value, u, proof, this._home );
         };
 
         Blockchain.mining.includeTx(tx);
