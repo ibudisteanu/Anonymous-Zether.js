@@ -396,7 +396,6 @@ class ZSC{
         return true;
     }
 
-
     // no "start" parameter for now.
     // CL and CR are "flat", x is a BN.
     readBalance (CL, CR, x) {

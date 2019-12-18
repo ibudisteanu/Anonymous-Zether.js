@@ -2,9 +2,11 @@
 
 Anonymous Zether solidity contracts developed by J.P. Morgan and implemented in pure Javascript.
 
-Improvements :
-    1. Whisper protocol
-        Idea suggestion from JP Morgan
+## Improvements :
+
+### 1. Whisper protocol
+
+Idea suggestion from JP Morgan
 
 Given:
 
@@ -22,13 +24,15 @@ Retrieving the secret balance from the sender\
 
 
 
-Todo by priorities:
+### 2. Todo by priorities:
 
-    1. Paying gas in Zether. It will enable Zether to be used as a native currency to pay the gas in Zether to the miners accepting it as gas.
+##### 1. Paying gas in Zether.
+
+It will enable Zether to be used as a native currency to pay the gas in Zether to the miners accepting it as gas.
 
 Additionally, we could add a few more features:
 
-    1. Proving the amount to the receiver without revealing the sender address.
+##### 2. Proving the amount to the receiver without revealing the sender address.
 
 # References
 

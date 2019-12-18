@@ -8,7 +8,6 @@ const Service = require('../utils/service.js');
 const bn128 = require('../utils/bn128.js');
 
 const Blockchain = require('./../blockchain/blockchain');
-const Transaction = require('./../blockchain/transaction');
 
 const Account = require('./account');
 const Friends = require('./friends');
@@ -90,7 +89,7 @@ class Client {
         if (this.account.keypair === undefined)
             throw "Client's account is not yet initialized!";
 
-        var account = this.account;
+        const account = this.account;
 
         console.log("Initiating deposit.");
 
@@ -123,13 +122,13 @@ class Client {
         if (this.account.keypair === undefined)
             throw "Client's account is not yet initialized!";
         decoys = decoys ? decoys : [];
-        var account = this.account;
-        var state = account._simulate();
+        const account = this.account;
+        const state = account._simulate();
         if (value > state.available + state.pending)
             throw "Requested transfer amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
-        var wait = consts.away();
-        var seconds = Math.ceil(wait / 1000);
-        var plural = seconds == 1 ? "" : "s";
+        const wait = consts.away();
+        const seconds = Math.ceil(wait / 1000);
+        const plural = seconds === 1 ? "" : "s";
         if (value > state.available) {
             console.log("Your transfer has been queued. Please wait " + seconds + " second" + plural + ", for the release of your funds...");
             return utils.sleep(wait).then(() => this.transfer(name, value, decoys));
@@ -138,8 +137,8 @@ class Client {
             console.log("Your transfer has been queued. Please wait " + seconds + " second" + plural + ", until the next epoch...");
             return utils.sleep(wait).then(() => this.transfer(name, value, decoys));
         }
-        var size = 2 + decoys.length;
-        var estimated = this.estimate(size, true); // see notes above
+        const size = 2 + decoys.length;
+        const estimated = this.estimate(size, true); // see notes above
 
         if (estimated > consts.EPOCH_LENGTH * 1000)
             throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + consts.EPOCH_LENGTH + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(estimate(size, true) / 1000) + " seconds.";
@@ -150,30 +149,30 @@ class Client {
         }
 
         if (size & (size - 1)) {
-            var previous = 1;
-            var next = 2;
+            let previous = 1;
+            let next = 2;
             while (next < size) {
                 previous *= 2;
                 next *= 2;
             }
             throw "Anonset's size (including you and the recipient) must be a power of two. Add " + (next - size) + " or remove " + (size - previous) + ".";
         }
-        var friends = this.friends.show();
+        const friends = this.friends.show();
         if (!(name in friends))
             throw "Name \"" + name + "\" hasn't been friended yet!";
         if (this.match(friends[name], account.keypair.y))
-            throw "Sending to yourself is currently unsupported (and useless!)."
-        var y = [account.keypair.y].concat([friends[name]]); // not yet shuffled
+            throw "Sending to yourself is currently unsupported (and useless!).";
+        const y = [account.keypair.y].concat([friends[name]]); // not yet shuffled
         decoys.forEach((decoy) => {
             if (!(decoy in friends))
                 throw "Decoy \"" + decoy + "\" is unknown in friends directory!";
             y.push(friends[decoy]);
         });
-        var index = [];
-        var m = y.length;
-        while (m != 0) { // https://bost.ocks.org/mike/shuffle/
-            var i = Math.floor(Math.random() * m--);
-            var temp = y[i];
+        const index = [];
+        const m = y.length;
+        while (m !== 0) { // https://bost.ocks.org/mike/shuffle/
+            const i = Math.floor(Math.random() * m--);
+            const temp = y[i];
             y[i] = y[m];
             y[m] = temp;
             if (this.match(temp, account.keypair.y))
@@ -181,26 +180,26 @@ class Client {
             else if (this.match(temp, friends[name]))
                 index[1] = m;
         } // shuffle the array of y's
-        if (index[0] % 2 == index[1] % 2) {
-            var temp = y[index[1]];
-            y[index[1]] = y[index[1] + (index[1] % 2 == 0 ? 1 : -1)];
-            y[index[1] + (index[1] % 2 == 0 ? 1 : -1)] = temp;
-            index[1] = index[1] + (index[1] % 2 == 0 ? 1 : -1);
+        if (index[0] % 2 === index[1] % 2) {
+            const temp = y[index[1]];
+            y[index[1]] = y[index[1] + (index[1] % 2 === 0 ? 1 : -1)];
+            y[index[1] + (index[1] % 2 === 0 ? 1 : -1)] = temp;
+            index[1] = index[1] + (index[1] % 2 === 0 ? 1 : -1);
         } // make sure you and your friend have opposite parity
 
 
         const result = ZSC.simulateAccounts(y, consts.getEpoch() );
 
-        var r = bn128.randomScalar();
-        var C = y.map((party, i) => bn128.curve.g.mul(i == index[0] ? new BN(value) : i == index[1] ? new BN(-value) : new BN(0)).add(bn128.unserialize(party).mul(r)));
-        var D = bn128.curve.g.mul(r);
-        var CLn = result.map((simulated, i) => bn128.serialize(bn128.unserialize(simulated[0]).add(C[i].neg())));
-        var CRn = result.map((simulated) => bn128.serialize(bn128.unserialize(simulated[1]).add(D.neg())));
+        const r = bn128.randomScalar();
+        let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(value) : i === index[1] ? new BN(-value) : new BN(0)).add(bn128.unserialize(party).mul(r)));
+        let D = bn128.curve.g.mul(r);
+        const CLn = result.map((simulated, i) => bn128.serialize(bn128.unserialize(simulated[0]).add(C[i].neg())));
+        const CRn = result.map((simulated) => bn128.serialize(bn128.unserialize(simulated[1]).add(D.neg())));
         C = C.map(bn128.serialize);
         D = bn128.serialize(D);
 
-        var proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, state.available - value, index);
-        var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
+        const proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, state.available - value, index);
+        const u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
 
         const tx = Blockchain.createTransaction();
@@ -233,15 +232,15 @@ class Client {
     async withdraw (value) {
         if (this.account.keypair === undefined)
             throw "Client's account is not yet initialized!";
-        var account = this.account;
-        var state = account._simulate();
+        const account = this.account;
+        const state = account._simulate();
         if (value > state.available + state.pending)
             throw "Requested withdrawal amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
 
 
-        var wait = consts.away();
-        var seconds = Math.ceil(wait / 1000);
-        var plural = seconds == 1 ? "" : "s";
+        const wait = consts.away();
+        const seconds = Math.ceil(wait / 1000);
+        const plural = seconds === 1 ? "" : "s";
         if (value > state.available) {
             console.log("Your withdrawal has been queued. Please wait " + seconds + " second" + plural + ", for the release of your funds...");
             return utils.sleep(wait).then(() => this.withdraw(value));
@@ -258,11 +257,11 @@ class Client {
 
         const result = ZSC.simulateAccounts( [account.keypair.y], consts.getEpoch() );
 
-        var simulated = result[0];
-        var CLn = bn128.serialize(bn128.unserialize(simulated[0]).add(bn128.curve.g.mul(new BN(-value))));
-        var CRn = simulated[1];
-        var proof = this.service.proveBurn(CLn, CRn, account.keypair.y, value, state.lastRollOver, this._home, account.keypair.x, state.available - value);
-        var u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
+        const simulated = result[0];
+        const CLn = bn128.serialize(bn128.unserialize(simulated[0]).add(bn128.curve.g.mul(new BN(-value))));
+        const CRn = simulated[1];
+        const proof = this.service.proveBurn(CLn, CRn, account.keypair.y, value, state.lastRollOver, this._home, account.keypair.x, state.available - value);
+        const u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
         const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
@@ -287,7 +286,7 @@ class Client {
     };
 
     match (address, candidate) {
-        return address[0] == candidate[0] && address[1] == candidate[1];
+        return address[0] === candidate[0] && address[1] === candidate[1];
     };
 
 }
