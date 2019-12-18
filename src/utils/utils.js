@@ -7,22 +7,8 @@ const utils = {};
 
 utils.determinePublicKey = (x) => {
     return bn128.serialize(bn128.curve.g.mul(x));
-}
-
-// no "start" parameter for now.
-// CL and CR are "flat", x is a BN.
-utils.readBalance = (CL, CR, x) => {
-
-    const gB = CL.add(CR.mul(x.neg()));
-
-    let accumulator = bn128.zero;
-    for (let  i = 0; i < bn128.B_MAX; i++) {
-        if (accumulator.eq(gB))
-            return i;
-
-        accumulator = accumulator.add(bn128.curve.g);
-    }
 };
+
 
 utils.createAccount = () => {
     var x = bn128.randomScalar();

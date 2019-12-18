@@ -1,5 +1,6 @@
-const bn128 = require('./../utils/bn128')
+const bn128 = require('./../utils/bn128');
 const consts = require('./../consts');
+const ZSC = require ('./../js-contracts/zsc');
 
 class Account {
 
@@ -46,6 +47,17 @@ class Account {
     secret (){
         return bn128.bytes(this.keypair['x']);
     };
+
+    decodeBalance(){
+
+        const result = ZSC.simulateAccounts([this.keypair.y ], consts.getEpoch() + 1);
+
+        const simulated = result[0];
+
+        this._state.available = ZSC.readBalance(bn128.unserialize(simulated[0]), bn128.unserialize(simulated[1]), this.keypair.x );
+
+
+    }
 
 }
 

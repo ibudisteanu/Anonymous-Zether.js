@@ -43,13 +43,11 @@ class Client {
 
         } else {
 
-            const x = new BN(secret.slice(2), 16).toRed(bn128.q);
+            const x = utils.BNFieldfromHex(  secret );
             this.account.keypair = { x, 'y': utils.determinePublicKey(x) };
 
-            const result = ZSC.simulateAccounts([this.account.keypair['y']], consts.getEpoch() + 1);
+            this.account.decodeBalance( );
 
-            const simulated = result[0];
-            this.account._state.available = utils.readBalance(bn128.unserialize(simulated[0]), bn128.unserialize(simulated[1]), this.account.keypair['x']);
             console.log("Account recovered successfully.");
 
         }
@@ -77,7 +75,7 @@ class Client {
             this.account._state = this.account._simulate(block.timestamp);
 
 
-            const value = utils.readBalance(bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair['x'])
+            const value = ZSC.readBalance( bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair['x'] );
             if (value > 0) {
                 this.account._state.pending += value;
                 console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
