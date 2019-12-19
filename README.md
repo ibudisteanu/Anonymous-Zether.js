@@ -57,12 +57,12 @@ It enables Zether to be used as a native currency to pay the gas in Zether to th
 
 ![alt text](https://latex.codecogs.com/gif.latex?gas) - miner fee\
 ![alt text](https://latex.codecogs.com/gif.latex?b) - amount \
-![alt text](https://latex.codecogs.com/gif.latex?%28C_%7Bi%7D%2C%20D%29) - cipher text\
+![alt text](https://latex.codecogs.com/gif.latex?%28C_%7Bi%7D%2C%20D%29) - cipher text
 
-![alt text](https://latex.codecogs.com/gif.latex?-gas%20-b) - Subtract `b` and `gas` from the sender\
+![alt text](https://latex.codecogs.com/gif.latex?-gas%20-b) - Homomorphically subtract `b` and `gas` from the sender\
 ![alt text](https://latex.codecogs.com/gif.latex?&plus;b) - Homomorphically add `b` to the receiver\
-![alt text](https://latex.codecogs.com/gif.latex?0) - `0` for decoys\
-![alt text](https://latex.codecogs.com/gif.latex?gas) - Add `gas` to the miner. Homomorphically add can be performed as well\
+![alt text](https://latex.codecogs.com/gif.latex?0) - Homomorphically add `0` to the decoys\
+![alt text](https://latex.codecogs.com/gif.latex?gas) - Add `gas` to the miner. Homomorphically add can be performed as well
 
 
 # References
