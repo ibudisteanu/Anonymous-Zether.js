@@ -22,12 +22,15 @@ bn128.curve = new EC.curve.short({
 bn128.FIELD_MODULUS = FIELD_MODULUS;
 bn128.UNITY_MODULUS = UNITY_MODULUS;
 bn128.GROUP_MODULUS = GROUP_MODULUS;
-bn128.B_MAX = B_MAX;
+
 
 bn128.zero = bn128.curve.g.mul(0);
 
 bn128.p = BN.red(new BN(bn128.curve.p.toString(16), 16)); // temporary workaround due to
 bn128.q = BN.red(new BN(bn128.curve.n.toString(16), 16)); // https://github.com/indutny/elliptic/issues/191
+
+bn128.B_MAX = B_MAX;
+bn128.B_MAX_BN = new BN(B_MAX).toRed(bn128.q);
 
 // Get a random BN in the bn128 curve group's reduction context
 bn128.randomScalar = () => {

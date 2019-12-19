@@ -53,14 +53,9 @@ class Client {
     };
 
     //parties = y
-    onReceivedTransfer( {block, params: { y, D, C, u, v }, tx } ){
+    onReceivedTransfer( {block, params: { y, D, C, u, v, v2 }, tx } ){
 
         console.warn('onReceivedTransfer');
-
-        if ( this._transfers[tx.hash]){
-            delete this._transfers[tx.hash];
-            return;
-        }
 
         const parties = y;
 
@@ -72,26 +67,65 @@ class Client {
 
             this.account._state = this.account._simulate(block.timestamp);
 
-            //decoding whisper
-            const hash = utils.hash(
-                ABICoder.encodeParameters([
-                    'bytes32[2]',
-                ], [
-                    bn128.serialize( bn128.unserialize(D).mul( utils.BNFieldfromHex ( this.account.keypair.x ) ) ),
-                ])
-            );
-
-            const b = utils.BNFieldfromHex( v ).redSub(  hash  );
+            //decoding receiver whisper
+            const b = utils.BNFieldfromHex( v ).redSub(  utils.hash( bn128.representation( bn128.unserialize(D).mul( utils.BNFieldfromHex ( this.account.keypair.x ) ) ) )  );
             const whisper = b.toString(10 );
 
-            console.log( "Whisper", whisper );
+            //decoding sender whisper
+            const b2 = utils.BNFieldfromHex( v2 ).redSub(  utils.hash( bn128.representation( bn128.unserialize(D).mul( utils.BNFieldfromHex ( this.account.keypair.x ) ) ) )  );
+            const whisper2 = b2.toString(10 );
 
-            const value = ZSC.readBalance( bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair.x );
-            if (value > 0) {
-                this.account._state.pending += value;
-                console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
+            console.log( "Whispers", whisper, whisper2 );
+
+            try{
+
+                if (  b2.lte(bn128.B_MAX_BN) && b.gte(bn128.B_MAX_BN) ){
+
+                    //sender
+                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b2, type: "sender"  } );
+
+                    const value = ZSC.readBalance( bn128.unserialize( C[i] ), bn128.unserialize( D ), this.account.keypair.x );
+                    if (value > 0) {
+                        console.log("Transfer of " + value + " sent! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
+                        ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "sender"  } );
+                    } else throw "Sender couldn't decode";
+
+
+                } else if (  b.lte(bn128.B_MAX_BN) && b2.gte(bn128.B_MAX_BN) ){
+
+                    //receiver
+                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b, type: "receiver"  } );
+
+                    const value = ZSC.readBalance( bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair.x );
+                    if (value > 0) {
+                        this.account._state.pending += value;
+                        console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
+                        ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "receiver"  } );
+                    } else throw "Receiver couldn't decode";
+
+                }
+
+
+            }catch(err){
+
+                const value1 = ZSC.readBalance( bn128.unserialize( C[i] ), bn128.unserialize( D ), this.account.keypair.x );
+                const value2 = ZSC.readBalance( bn128.unserialize( C[i].neg() ), bn128.unserialize( D.neg() ), this.account.keypair.x );
+
+                if (value1 > 0) {
+
+                    //sender
+                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value1, type: "sender"  } );
+
+                }
+                if (value2 > 0){
+
+                    //receiver
+                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value2, type: "receiver"  } );
+
+                }
+
+
             }
-
         }
 
     }
@@ -214,19 +248,18 @@ class Client {
         const u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
         //whisper the value to the receiver
-        let v = utils.hash(
-            ABICoder.encodeParameters([
-                'bytes32[2]',
-            ], [
-                bn128.serialize( bn128.unserialize( y[ index[1] ] ).mul( r ) ),
-            ])
-        );
+        let v = utils.hash( bn128.representation( bn128.unserialize( y[ index[1] ] ).mul( r ) ) );
         v = v.redAdd( new BN(value).toRed(bn128.q) );
         v = bn128.bytes(v);
 
+        //whisper the value to the receiver
+        let v2 = utils.hash( bn128.representation( bn128.unserialize( D ).mul( utils.BNFieldfromHex( account.keypair.x ) ) ) );
+        v2 = v2.redAdd( new BN(value).toRed(bn128.q) );
+        v2 = bn128.bytes(v2);
+
         const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.transfer( {block}, C, D, y, u, v, proof);
+            return ZSC.transfer( {block}, C, D, y, u, proof);
         };
 
 
@@ -241,7 +274,7 @@ class Client {
             account._state.nonceUsed = true;
             account._state.pending -= value;
 
-            ZSC.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, proof }} );
+            ZSC.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, v2, proof }} );
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 

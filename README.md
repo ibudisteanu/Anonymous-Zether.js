@@ -9,7 +9,7 @@ Anonymous Zether solidity contracts developed by J.P. Morgan and implemented in 
 Idea suggestion by Zhou Zhiyao [@zzy96]( https://github.com/zzy96)
 
 
-1.1 Whisper to the receiver:
+##### 1.1 Whisper to receiver:
 
 Given:
 
@@ -25,7 +25,7 @@ Computing the proof hiding the balance for receiver\
 Retrieving the secret balance from the sender\
 ![alt text](doc/whisper-receiver-2.gif?raw=true)
 
-1.2 Whisper to the sender:
+##### 1.2 Whisper to sender:
 
 ![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the sender\
 ![alt text](https://latex.codecogs.com/gif.latex?x_%7Bi%7D) - secret of the sender\
