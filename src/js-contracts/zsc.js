@@ -411,7 +411,31 @@ class ZSC{
         }
 
         return 0;
-    };
+    }
+
+    proveAmountSender( y, i, r){
+
+        const proof = bn128.unserialize( y[i] ).mul(r);
+
+        if (!proof.validate()) throw "Invalid proof points";
+
+        return proof;
+    }
+
+    verifyAmountSender(b, C, i, proof){
+
+        const no1 =  bn128.curve.g.mul( new BN(-b) );
+        const no2 =  bn128.unserialize( C[i] );
+
+        let out = bn128.unserialize( [ bn128.bytes(no1.getX().mul( no2.getX() ) ), bn128.bytes(no1.getY().mul(no2.getY()))  ]);
+
+        if (!out.validate()) throw "Invalid proof points";
+
+        if ( !bn128.unserialize(proof).eq(out) ) throw "Proof is not matching";
+
+        return true;
+
+    }
 
 }
 

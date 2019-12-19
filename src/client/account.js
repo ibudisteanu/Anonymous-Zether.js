@@ -33,6 +33,7 @@ class Account {
             updated.pending = 0;
             updated.nonceUsed = false;
         }
+
         return updated;
     };
 

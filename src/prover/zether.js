@@ -25,6 +25,7 @@ class ZetherProver {
             list.push(accum.coefficients);
             return;
         }
+
         var pTop = p.pop();
         var qTop = q.pop();
         var left = new Polynomial([pTop.getVector()[0], qTop.getVector()[0]]);

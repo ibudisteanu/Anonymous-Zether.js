@@ -38,14 +38,14 @@ Retrieving the secret balance from the sender
 ![alt text](doc/whisper-sender-2.gif?raw=true)
 
 
-### 2 Proving amount and receiver without revealing sender
+### 2. Proving amount and receiver without revealing sender
 
-Proving the amount `b` to the receiver `i` without revealing the sender.
+Proving to someone that the transaction sent amount `b` to the receiver `i` without revealing who the sender was.
 
 ![alt text](https://latex.codecogs.com/gif.latex?b) - balance of transaction\
 ![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the receiver\
 ![alt text](https://latex.codecogs.com/gif.latex?r) - public view key\
-![alt text](https://latex.codecogs.com/gif.latex?%28C_%7Bi%7D%2C%20D%29) - public view key
+![alt text](https://latex.codecogs.com/gif.latex?%28C_%7Bi%7D%2C%20D%29) - cipher text
 
 ![alt text](doc/proving-amount-sender.gif?raw=true)
 

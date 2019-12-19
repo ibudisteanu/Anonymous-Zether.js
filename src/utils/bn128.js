@@ -58,11 +58,15 @@ bn128.unserialize = (serialization) => {
     return point;
 };
 
+bn128.toVector = (point) => {
+    return [ new BN( point.getX().toString() ).toRed(bn128.q),new BN( point.getY().toString() ).toRed(bn128.q) ];
+};
+
 
 bn128.representation = (point) => {
     var temp = bn128.serialize(point);
     return temp[0] + temp[1].slice(2);
-}
+};
 
 bn128.B_MAX = B_MAX;
 

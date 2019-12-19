@@ -132,6 +132,7 @@ class GeneratorVector {
         this.concat = (other) => {
             return new GeneratorVector(vector.concat(other.getVector()));
         };
+
     }
 }
 
