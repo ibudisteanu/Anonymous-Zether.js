@@ -6,6 +6,7 @@ Anonymous Zether solidity contracts developed by J.P. Morgan and implemented in 
 
 ### 1. Whisper protocol
 
+Whisper the balance `b` on chain by encrypting `b` using the shared secret.
 Idea suggestion by Zhou Zhiyao [@zzy96]( https://github.com/zzy96)
 
 
@@ -33,19 +34,28 @@ Retrieving the secret balance from the sender\
 Computing the proof hiding the balance for receiver\
 ![alt text](doc/whisper-sender-1.gif?raw=true)
 
-Retrieving the secret balance from the sender\
+Retrieving the secret balance from the sender
 ![alt text](doc/whisper-sender-2.gif?raw=true)
 
 
-### 2. Todo by priorities:
+### 2 Proving amount and receiver without revealing sender
+
+Proving the amount `b` to the receiver `i` without revealing the sender.
+
+![alt text](https://latex.codecogs.com/gif.latex?b) - balance of transaction\
+![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the receiver\
+![alt text](https://latex.codecogs.com/gif.latex?r) - public view key\
+![alt text](https://latex.codecogs.com/gif.latex?%28C_%7Bi%7D%2C%20D%29) - public view key
+
+![alt text](doc/proving-amount-sender.gif?raw=true)
+
+### 3. Todo by priorities:
 
 ##### 1. Paying gas in Zether.
 
 It will enable Zether to be used as a native currency to pay the gas in Zether to the miners accepting it as gas.
 
 Additionally, we could add a few more features:
-
-##### 2. Proving the amount to the receiver without revealing the sender address.
 
 # References
 
