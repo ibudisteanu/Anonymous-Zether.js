@@ -41,13 +41,27 @@ Retrieving the secret balance from the sender
 ### 2. Proving amount and receiver without revealing sender
 
 Proving to someone that the transaction sent amount `b` to the receiver `i` without revealing who the sender was.
+Idea suggestion by [@benediamond]( https://github.com/benediamond)
+
+A proof `(c,s)` is computed as follows:
 
 ![alt text](https://latex.codecogs.com/gif.latex?b) - balance of transaction\
 ![alt text](https://latex.codecogs.com/gif.latex?i) -  index of the receiver\
 ![alt text](https://latex.codecogs.com/gif.latex?r) - public view key\
 ![alt text](https://latex.codecogs.com/gif.latex?%28C_%7Bi%7D%2C%20D%29) - cipher text
 
-![alt text](doc/proving-amount-sender.gif?raw=true)
+
+Prover - generating proof `(c, s)`
+![alt text](https://latex.codecogs.com/gif.latex?g%5E%7Bb%7D%20%5Ccdot%20C_%7Bi%7D%20%3D%20y_%7Bi%7D%5E%7Br%7D) - Claim \
+![alt text](https://latex.codecogs.com/gif.latex?g%5E%7Br%7D%20%3D%20D) - `r` such \
+![alt text](https://latex.codecogs.com/gif.latex?K_%7Br%7D%20%3D%20g%5E%7Bk%7D) and ![alt text](https://latex.codecogs.com/gif.latex?y_%7Br%7D%20%3D%20Y_%7Bi%7D%5E%7Bk%7D)  - Choosing a random element `k` in `F_q` \
+![alt text](https://latex.codecogs.com/gif.latex?c%20%3D%20Hash%28%20K_%7Br%7D%2C%20Y_%7Br%7D%20%29) - computing `c` \
+![alt text](https://latex.codecogs.com/gif.latex?s%20%3D%20k%20&plus;%20c%20%5Ccdot%20r) - computing `s`
+
+Verifier - verify proof `(c, s)`
+![alt text](https://latex.codecogs.com/gif.latex?K_%7Br%7D%20%3D%20g%5E%7Bs%7D%20%5Ccdot%20D%5E%7B-c%7D) - computing `K_r`\
+![alt text](https://latex.codecogs.com/gif.latex?Y_%7Br%7D%20%3D%20y_%7Bi%7D%5E%7Bs%7D%5Ccdot%20%28g%5E%7Bb%7D%5Ccdot%20C_%7Bi%7D%29%5E%7B-c%7D) - computing `Y_r`\
+![alt text](https://latex.codecogs.com/gif.latex?c%20%3D%20Hash%28K_%7Br%7D%2C%20Y_%7Br%7D%29) - equation verification
 
 ### 3. Todo by priorities:
 
