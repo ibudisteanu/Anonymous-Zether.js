@@ -34,7 +34,7 @@ Retrieving the secret balance from the sender\
 Computing the proof hiding the balance for receiver\
 ![alt text](doc/whisper-sender-1.gif?raw=true)
 
-Retrieving the secret balance from the sender
+Retrieving the secret balance from the sender\
 ![alt text](doc/whisper-sender-2.gif?raw=true)
 
 
@@ -53,7 +53,8 @@ A proof `(c,s)` is computed as follows:\
 Prover - generating proof `(c, s)`\
 ![alt text](https://latex.codecogs.com/gif.latex?g%5E%7Bb%7D%20%5Ccdot%20C_%7Bi%7D%20%3D%20y_%7Bi%7D%5E%7Br%7D) - Claim \
 ![alt text](https://latex.codecogs.com/gif.latex?g%5E%7Br%7D%20%3D%20D) - `r` such \
-![alt text](https://latex.codecogs.com/gif.latex?K_%7Br%7D%20%3D%20g%5E%7Bk%7D) and ![alt text](https://latex.codecogs.com/gif.latex?y_%7Br%7D%20%3D%20Y_%7Bi%7D%5E%7Bk%7D)  - Choosing a random element `k` in `F_q` \
+![alt text](https://latex.codecogs.com/gif.latex?K_%7Br%7D%20%3D%20g%5E%7Bk%7D) Choosing a random element `K` in `F_q` \
+![alt text](https://latex.codecogs.com/gif.latex?Y_%7Br%7D%20%3D%20y_%7Bi%7D%5E%7Bk%7D) - Choosing a random element `Y` in `F_q` \
 ![alt text](https://latex.codecogs.com/gif.latex?c%20%3D%20Hash%28%20K_%7Br%7D%2C%20Y_%7Br%7D%20%29) - computing `c` \
 ![alt text](https://latex.codecogs.com/gif.latex?s%20%3D%20k%20&plus;%20c%20%5Ccdot%20r) - computing `s`
 
