@@ -278,10 +278,9 @@ class Client {
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
-            let proof2 = ZSC.proveAmountSender(y, index[1], r);
-            proof2 = bn128.serialize(proof2);
+            const proof2 = ZSC.proveAmountSender(y, index[1], r);
 
-            ZSC.verifyAmountSender(value, C, index[1], proof2);
+            ZSC.verifyAmountSender(value, index[1], y, C, D, proof2);
 
         };
 

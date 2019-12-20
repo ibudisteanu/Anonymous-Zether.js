@@ -415,23 +415,28 @@ class ZSC{
 
     proveAmountSender( y, i, r){
 
-        const proof = bn128.unserialize( y[i] ).mul(r);
+        const k = bn128.randomScalar();
 
-        if (!proof.validate()) throw "Invalid proof points";
+        const K = bn128.curve.g.mul(  k );
+        const Y = bn128.unserialize( y[i] ).mul( k );
 
-        return proof;
+        const c = utils.hash( bn128.representation(K) + bn128.representation(Y).substr(2) );
+        const s = k.add( c.redMul( BNFieldfromHex(r)  ) );
+
+        return {c, s};
     }
 
-    verifyAmountSender(b, C, i, proof){
+    verifyAmountSender(b, i, y, C, D, proof){
 
-        const no1 =  bn128.curve.g.mul( new BN(-b) );
-        const no2 =  bn128.unserialize( C[i] );
+        //K_r
+        const Kr = bn128.curve.g.mul( proof.s ).add(  bn128.unserialize(D).mul( proof.c.neg() ) );
 
-        let out = bn128.unserialize( [ bn128.bytes(no1.getX().mul( no2.getX() ) ), bn128.bytes(no1.getY().mul(no2.getY()))  ]);
+        //Y_r
+        const Yr = bn128.unserialize( y[i] ).mul( proof.s ).add(  bn128.curve.g.mul( new BN(b)).add( bn128.unserialize(C[i])).mul( proof.c.neg() ));
 
-        if (!out.validate()) throw "Invalid proof points";
+        const hash = utils.hash( bn128.representation(Kr) + bn128.representation(Yr).substr(2) );
 
-        if ( !bn128.unserialize(proof).eq(out) ) throw "Proof is not matching";
+        if ( !hash.eq(proof.c)) throw "Proof is not matching";
 
         return true;
 
