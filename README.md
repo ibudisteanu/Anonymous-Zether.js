@@ -6,7 +6,7 @@ Anonymous Zether solidity contracts developed by J.P. Morgan and implemented in 
 
 ### 1. Whisper protocol
 
-Whisper the balance `b` on chain by encrypting `b` using the shared secret.
+Whisper the balance `b` on chain by encrypting `b` using the shared secret.\
 Idea suggestion by Zhou Zhiyao [@zzy96]( https://github.com/zzy96)
 
 
@@ -40,7 +40,7 @@ Retrieving the secret balance from the sender\
 
 ### 2. Proving amount and receiver without revealing sender
 
-Proving to someone that the transaction sent amount `b` to the receiver `i` without revealing who the sender was.
+Proving to someone that the transaction sent amount `b` to the receiver `i` without revealing who the sender was.\
 Idea suggestion by [@benediamond]( https://github.com/benediamond)
 
 A proof `(c,s)` is computed as follows:\
@@ -52,9 +52,8 @@ A proof `(c,s)` is computed as follows:\
 
 Prover - generating proof `(c, s)`\
 ![alt text](https://latex.codecogs.com/gif.latex?g%5E%7Bb%7D%20%5Ccdot%20C_%7Bi%7D%20%3D%20y_%7Bi%7D%5E%7Br%7D) - Claim \
-![alt text](https://latex.codecogs.com/gif.latex?g%5E%7Br%7D%20%3D%20D) - `r` such \
-![alt text](https://latex.codecogs.com/gif.latex?K_%7Br%7D%20%3D%20g%5E%7Bk%7D) Choosing a random element `K` in `F_q` \
-![alt text](https://latex.codecogs.com/gif.latex?Y_%7Br%7D%20%3D%20y_%7Bi%7D%5E%7Bk%7D) - Choosing a random element `Y` in `F_q` \
+Given `r` such  ![alt text](https://latex.codecogs.com/gif.latex?g%5E%7Br%7D%20%3D%20D)
+Choosing a random element `k` in `F_q`  ![alt text](https://latex.codecogs.com/gif.latex?K_%7Br%7D%20%3D%20g%5E%7Bk%7D) and ![alt text](https://latex.codecogs.com/gif.latex?Y_%7Br%7D%20%3D%20y_%7Bi%7D%5E%7Bk%7D) \
 ![alt text](https://latex.codecogs.com/gif.latex?c%20%3D%20Hash%28%20K_%7Br%7D%2C%20Y_%7Br%7D%20%29) - computing `c` \
 ![alt text](https://latex.codecogs.com/gif.latex?s%20%3D%20k%20&plus;%20c%20%5Ccdot%20r) - computing `s`
 
