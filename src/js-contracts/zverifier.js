@@ -150,7 +150,7 @@ class ZVerifier{
 
         if ( proof.C.mul(anonAuxiliaries.w).add(proof.D).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_C) ) ) )  === false ) throw "Recovery failure for C^w * D.";
 
-        anonAuxiliaries.temp = this.params.gs[0].mul( anonAuxiliaries.f[0][0].redMul(anonAuxiliaries.f[anonAuxiliaries.m][0])).add( this.params.hs[0].mul( anonAuxiliaries.f[0][1].redMul(anonAuxiliaries.f[anonAuxiliaries.m][1])));
+        anonAuxiliaries.temp = this.params.gs[0].mul( anonAuxiliaries.f[0][1].redMul(anonAuxiliaries.f[anonAuxiliaries.m][1])).add( this.params.gs[1].mul( anonAuxiliaries.f[0][0].redMul(anonAuxiliaries.f[anonAuxiliaries.m][0])));
 
         if ( proof.F.mul( anonAuxiliaries.w ).add( proof.E ).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_E ) )  ) ) === false ) throw "Recovery failure for F^w * E";
 
@@ -171,7 +171,7 @@ class ZVerifier{
         for (let i = 0; i < anonAuxiliaries.N; i++) {
             anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( anonAuxiliaries.CR[ Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.dPow));
             anonAuxiliaries.y_XR = anonAuxiliaries.y_XR.add(anonAuxiliaries.yR[  Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.dPow));
-            if (j > 0)
+            if (i > 0)
                 anonAuxiliaries.dPow = anonAuxiliaries.dPow.redMul(anonAuxiliaries.d);
 
         }
@@ -239,7 +239,7 @@ class ZVerifier{
             'bytes32',
             'bytes32[2][2]',
         ], [
-            bn128.bytes(+zetherAuxiliaries.z),
+            bn128.bytes(zetherAuxiliaries.z),
             proof.tCommits.map( bn128.serialize ),
         ]));
 
