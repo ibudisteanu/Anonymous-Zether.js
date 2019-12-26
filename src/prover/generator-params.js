@@ -50,31 +50,19 @@ class GeneratorParams{
 
     }
 
-    commit (gExp, hExp, blinding) {
+    commit (blinding, gExp, hExp) {
         var result = this.h.mul(blinding);
         var gsVector = this.gsVector.getVector();
-        var hsVector = this.hsVector.getVector();
         gExp.getVector().forEach((gExp, i) => {
             result = result.add(gsVector[i].mul(gExp));
         });
-        hExp.getVector().forEach((hExp, i) => { // swap the order and enclose this in an if (hExp) if block if you want it optional.
-            result = result.add(hsVector[i].mul(hExp));
-        });
-        return result;
-    };
 
-    commitRows (exp, blinding) { // exp is an m * 2 array...
-
-        var result = this.h.mul(blinding);
-        var gsVector = this.gsVector.getVector();
-        var hsVector = this.hsVector.getVector();
-
-        exp.forEach((exp_i, i) => {
-            var expVector = exp_i.getVector();
-            result = result.add(gsVector[i].mul(expVector[0]));
-            result = result.add(hsVector[i].mul(expVector[1]));
-        });
-
+        if (hExp) {
+            var hsVector = this.hsVector.getVector();
+            hExp.getVector().forEach((hExp, i) => { // swap the order and enclose this in an if (hExp) if block if you want it optional.
+                result = result.add(hsVector[i].mul(hExp));
+            });
+        }
         return result;
     };
 

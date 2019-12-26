@@ -88,14 +88,14 @@ class ZVerifier{
             'bytes32[2]',
         ], [
             bn128.bytes(statementHash),
+            proof.BA.serialize(),
+            proof.BS.serialize(),
             proof.A.serialize(),
-            proof.S.serialize(),
-            proof.P.serialize(),
-            proof.Q.serialize(),
-            proof.U.serialize(),
-            proof.V.serialize(),
-            proof.X.serialize(),
-            proof.Y.serialize(),
+            proof.B.serialize(),
+            proof.C.serialize(),
+            proof.D.serialize(),
+            proof.E.serialize(),
+            proof.F.serialize(),
         ]));
 
         anonAuxiliaries.w = utils.hash(ABICoder.encodeParameters([
@@ -113,11 +113,11 @@ class ZVerifier{
             proof.CLnG.map(bn128.serialize),
             proof.CRnG.map(bn128.serialize),
             proof.C_0G.map(bn128.serialize),
+            proof.DG.map(bn128.serialize),
             proof.y_0G.map(bn128.serialize),
+            proof.gG.map(bn128.serialize),
             proof.C_XG.map(bn128.serialize),
             proof.y_XG.map(bn128.serialize),
-            proof.DG.map(bn128.serialize),
-            proof.gG.map(bn128.serialize),
         ]));
 
 
@@ -126,53 +126,51 @@ class ZVerifier{
 
         anonAuxiliaries.f = new Array( 2 * anonAuxiliaries.m );
 
-        for (let i=0; i < anonAuxiliaries.f.length; i++) {
-            anonAuxiliaries.f[i] = new Array(2);
-            anonAuxiliaries.f[i][1] = BNFieldfromHex( proof.f[i] );
-            anonAuxiliaries.f[i][0] = anonAuxiliaries.w.redSub(  BNFieldfromHex(proof.f[i]) );
+        for (let k=0; k < 2 * anonAuxiliaries.m; k++) {
+            anonAuxiliaries.f[k] = new Array(2);
+            anonAuxiliaries.f[k][1] = BNFieldfromHex( proof.f[k] );
+            anonAuxiliaries.f[k][0] = anonAuxiliaries.w.redSub(  BNFieldfromHex(proof.f[k]) );
         }
 
 
         anonAuxiliaries.temp = G1Point0();
 
 
-        for (let i=0; i < 2 * anonAuxiliaries.m; i++) {
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add(  this.params.gs[i].mul( anonAuxiliaries.f[i][0]) ) ;
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add(  this.params.hs[i].mul( anonAuxiliaries.f[i][1]) ) ;
-        }
+        for (let k=0; k < 2 * anonAuxiliaries.m; k++)
+            anonAuxiliaries.temp = anonAuxiliaries.temp.add(  this.params.gs[k].mul( anonAuxiliaries.f[k][1]) ) ;
 
-        if (proof.Q.mul(anonAuxiliaries.w).add(proof.P).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_P)) ) ) === false) throw "Recovery failure for Q^w * P.";
+
+        if (proof.B.mul(anonAuxiliaries.w).add(proof.A).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_A)) ) ) === false) throw "Recovery failure for B^w * A.";
 
 
         anonAuxiliaries.temp = G1Point0();
-        for (let i = 0; i < 2 * anonAuxiliaries.m; i++) { // danger... gs and hs need to be big enough.
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add( (this.params.gs[i].mul( anonAuxiliaries.f[i][0].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[i][0])))) );
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add( (this.params.hs[i].mul( anonAuxiliaries.f[i][1].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[i][1])))) );
-        }
+        for (let k = 0; k < 2 * anonAuxiliaries.m; k++)  // danger... gs and hs need to be big enough.
+            anonAuxiliaries.temp = anonAuxiliaries.temp.add( (this.params.gs[k].mul( anonAuxiliaries.f[k][1].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[k][1])))) );
 
-        if ( proof.U.mul(anonAuxiliaries.w).add(proof.V).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_U) ) ) )  === false ) throw "Recovery failure for U^w * V.";
+
+        if ( proof.C.mul(anonAuxiliaries.w).add(proof.D).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_C) ) ) )  === false ) throw "Recovery failure for C^w * D.";
 
         anonAuxiliaries.temp = this.params.gs[0].mul( anonAuxiliaries.f[0][0].redMul(anonAuxiliaries.f[anonAuxiliaries.m][0])).add( this.params.hs[0].mul( anonAuxiliaries.f[0][1].redMul(anonAuxiliaries.f[anonAuxiliaries.m][1])));
 
-        if ( proof.Y.mul( anonAuxiliaries.w ).add( proof.X ).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_X ) )  ) ) === false ) throw "Recovery failure for Y^w * X.";
+        if ( proof.F.mul( anonAuxiliaries.w ).add( proof.E ).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_E ) )  ) ) === false ) throw "Recovery failure for F^w * E";
 
-        anonAuxiliaries.poly = this.assemblePolynomials(anonAuxiliaries.f);
+        anonAuxiliaries.r = this.assemblePolynomials(anonAuxiliaries.f);
 
-        anonAuxiliaries.CR = this.assembleConvolutions(anonAuxiliaries.poly, statement.C);
-        anonAuxiliaries.yR = this.assembleConvolutions(anonAuxiliaries.poly, statement.y);
+        anonAuxiliaries.CR = this.assembleConvolutions(anonAuxiliaries.r, statement.C);
+        anonAuxiliaries.yR = this.assembleConvolutions(anonAuxiliaries.r, statement.y);
 
         anonAuxiliaries.CLnR = G1Point0();
         anonAuxiliaries.CRnR = G1Point0();
-        for (let j = 0; j < anonAuxiliaries.N; j++) {
-            anonAuxiliaries.CLnR = anonAuxiliaries.CLnR.add( statement.CLn[j].mul( anonAuxiliaries.poly[j][0]));
-            anonAuxiliaries.CRnR = anonAuxiliaries.CRnR.add( statement.CRn[j].mul( anonAuxiliaries.poly[j][0]));
+        for (let i = 0; i < anonAuxiliaries.N; i++) {
+            anonAuxiliaries.CLnR = anonAuxiliaries.CLnR.add( statement.CLn[i].mul( anonAuxiliaries.r[i][0]));
+            anonAuxiliaries.CRnR = anonAuxiliaries.CRnR.add( statement.CRn[i].mul( anonAuxiliaries.r[i][0]));
         }
         anonAuxiliaries.dPow = new BN(1).toRed(bn128.q);
         anonAuxiliaries.C_XR = G1Point0();
         anonAuxiliaries.y_XR = G1Point0();
-        for (let j = 0; j < anonAuxiliaries.N; j++) {
-            anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( anonAuxiliaries.CR[ Math.floor(j / 2) ][j % 2].mul( anonAuxiliaries.dPow));
-            anonAuxiliaries.y_XR = anonAuxiliaries.y_XR.add(anonAuxiliaries.yR[  Math.floor(j / 2) ][j % 2].mul( anonAuxiliaries.dPow));
+        for (let i = 0; i < anonAuxiliaries.N; i++) {
+            anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( anonAuxiliaries.CR[ Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.dPow));
+            anonAuxiliaries.y_XR = anonAuxiliaries.y_XR.add(anonAuxiliaries.yR[  Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.dPow));
             if (j > 0)
                 anonAuxiliaries.dPow = anonAuxiliaries.dPow.redMul(anonAuxiliaries.d);
 
@@ -180,19 +178,20 @@ class ZVerifier{
         anonAuxiliaries.wPow = new BN(1).toRed(bn128.q);
         anonAuxiliaries.DR = G1Point0();
         anonAuxiliaries.gR = G1Point0();
-        for (let i = 0; i < anonAuxiliaries.m; i++) {
-            anonAuxiliaries.CLnR = anonAuxiliaries.CLnR.add( proof.CLnG[i].mul( anonAuxiliaries.wPow.redNeg() ));
-            anonAuxiliaries.CRnR = anonAuxiliaries.CRnR.add( proof.CRnG[i].mul( anonAuxiliaries.wPow.redNeg() ));
-            anonAuxiliaries.CR[0][0] = anonAuxiliaries.CR[0][0].add( proof.C_0G[i].mul( anonAuxiliaries.wPow.redNeg()));
-            anonAuxiliaries.yR[0][0] = anonAuxiliaries.yR[0][0].add( proof.y_0G[i].mul( anonAuxiliaries.wPow.redNeg()));
-            anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( proof.C_XG[i].mul( anonAuxiliaries.wPow.redNeg()));
-            anonAuxiliaries.y_XR = anonAuxiliaries.y_XR.add( proof.y_XG[i].mul( anonAuxiliaries.wPow.redNeg()));
-            anonAuxiliaries.DR = anonAuxiliaries.DR.add( proof.DG[i].mul( anonAuxiliaries.wPow.redNeg()));
-            anonAuxiliaries.gR = anonAuxiliaries.gR.add( proof.gG[i].mul( anonAuxiliaries.wPow.redNeg()));
+        for (let k = 0; k < anonAuxiliaries.m; k++) {
+            anonAuxiliaries.CLnR = anonAuxiliaries.CLnR.add( proof.CLnG[k].mul( anonAuxiliaries.wPow.redNeg() ));
+            anonAuxiliaries.CRnR = anonAuxiliaries.CRnR.add( proof.CRnG[k].mul( anonAuxiliaries.wPow.redNeg() ));
+            anonAuxiliaries.CR[0][0] = anonAuxiliaries.CR[0][0].add( proof.C_0G[k].mul( anonAuxiliaries.wPow.redNeg()));
+            anonAuxiliaries.DR = anonAuxiliaries.DR.add( proof.DG[k].mul( anonAuxiliaries.wPow.redNeg()));
+            anonAuxiliaries.yR[0][0] = anonAuxiliaries.yR[0][0].add( proof.y_0G[k].mul( anonAuxiliaries.wPow.redNeg()));
+            anonAuxiliaries.gR = anonAuxiliaries.gR.add( proof.gG[k].mul( anonAuxiliaries.wPow.redNeg()));
+            anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( proof.C_XG[k].mul( anonAuxiliaries.wPow.redNeg()));
+            anonAuxiliaries.y_XR = anonAuxiliaries.y_XR.add( proof.y_XG[k].mul( anonAuxiliaries.wPow.redNeg()));
+
             anonAuxiliaries.wPow = anonAuxiliaries.wPow.redMul(anonAuxiliaries.w);
         }
-        anonAuxiliaries.gR = anonAuxiliaries.gR.add( this.params.g.mul( anonAuxiliaries.wPow));
         anonAuxiliaries.DR = anonAuxiliaries.DR.add( statement.D.mul( anonAuxiliaries.wPow));
+        anonAuxiliaries.gR = anonAuxiliaries.gR.add( this.params.g.mul( anonAuxiliaries.wPow));
 
         const zetherAuxiliaries = new ZetherAuxiliaries();
 
@@ -240,7 +239,7 @@ class ZVerifier{
             'bytes32',
             'bytes32[2][2]',
         ], [
-            '0x'+zetherAuxiliaries.z.toString(16),
+            bn128.bytes(+zetherAuxiliaries.z),
             proof.tCommits.map( bn128.serialize ),
         ]));
 

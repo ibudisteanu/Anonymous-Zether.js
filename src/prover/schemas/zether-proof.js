@@ -10,28 +10,29 @@ class ZetherProof {
 
     constructor() {
 
+        this.BA = null;
+        this.BS = null;
         this.A = null;
-        this.S = null;
-        this.P = null;
-        this.Q = null;
-        this.U = null;
-        this.V = null;
-        this.X = null;
-        this.Y = null;
+        this.B = null;
+        this.C = null;
+        this.D = null;
+        this.E = null;
+        this.F = null;
+
 
         this.CLnG = [];
         this.CRnG = [];
         this.C_0G = [];
+        this.DG = [];
         this.y_0G = [];
+        this.gG = [];
         this.C_XG = [];
         this.y_XG = [];
-        this.DG = [];
-        this.gG = [];
 
         this.f = [];
-        this.z_P = null;
-        this.z_U = null;
-        this.z_X = null;
+        this.z_A = null;
+        this.z_C = null;
+        this.z_E = null;
 
         this.CPrime = null;
         this.DPrime = null;
@@ -57,28 +58,28 @@ class ZetherProof {
 
     serialize () { // please initialize this before calling this method...
         var result = "0x";
+        result += bn128.representation(this.BA).slice(2);
+        result += bn128.representation(this.BS).slice(2);
         result += bn128.representation(this.A).slice(2);
-        result += bn128.representation(this.S).slice(2);
-        result += bn128.representation(this.P).slice(2);
-        result += bn128.representation(this.Q).slice(2);
-        result += bn128.representation(this.U).slice(2);
-        result += bn128.representation(this.V).slice(2);
-        result += bn128.representation(this.X).slice(2);
-        result += bn128.representation(this.Y).slice(2);
+        result += bn128.representation(this.B).slice(2);
+        result += bn128.representation(this.C).slice(2);
+        result += bn128.representation(this.D).slice(2);
+        result += bn128.representation(this.E).slice(2);
+        result += bn128.representation(this.F).slice(2);
 
-        this.CLnG.map(CLnG_i => result += bn128.representation(CLnG_i).slice(2) );
-        this.CRnG.map(CRnG_i => result += bn128.representation(CRnG_i).slice(2) );
-        this.C_0G.map(C_0G_i => result += bn128.representation(C_0G_i).slice(2) );
-        this.y_0G.map(y_0G_i => result += bn128.representation(y_0G_i).slice(2) );
-        this.C_XG.map(C_XG_i => result += bn128.representation(C_XG_i).slice(2) );
-        this.y_XG.map(y_XG_i => result += bn128.representation(y_XG_i).slice(2) );
-        this.DG.map(DG_i => result += bn128.representation(DG_i).slice(2) );
-        this.gG.map(gG_i => result += bn128.representation(gG_i).slice(2) );
-        this.f.map(f_i =>  result += bn128.bytes(f_i).slice(2) );
+        this.CLnG.forEach((CLnG_k) => { result += bn128.representation(CLnG_k).slice(2); });
+        this.CRnG.forEach((CRnG_k) => { result += bn128.representation(CRnG_k).slice(2); });
+        this.C_0G.forEach((C_0G_k) => { result += bn128.representation(C_0G_k).slice(2); });
+        this.DG.forEach((DG_k) => { result += bn128.representation(DG_k).slice(2); });
+        this.y_0G.forEach((y_0G_k) => { result += bn128.representation(y_0G_k).slice(2); });
+        this.gG.forEach((gG_k) => { result += bn128.representation(gG_k).slice(2); });
+        this.C_XG.forEach((C_XG_k) => { result += bn128.representation(C_XG_k).slice(2); });
+        this.y_XG.forEach((y_XG_k) => { result += bn128.representation(y_XG_k).slice(2); });
+        this.f.getVector().forEach((f_k) => { result += bn128.bytes(f_k).slice(2); });
 
-        result += bn128.bytes(this.z_P).slice(2);
-        result += bn128.bytes(this.z_U).slice(2);
-        result += bn128.bytes(this.z_X).slice(2);
+        result += bn128.bytes(this.z_A).slice(2);
+        result += bn128.bytes(this.z_C).slice(2);
+        result += bn128.bytes(this.z_E).slice(2);
 
         result += bn128.representation(this.CPrime).slice(2);
         result += bn128.representation(this.DPrime).slice(2);
@@ -109,43 +110,43 @@ class ZetherProof {
 
         arr = Buffer.from( utils.fromHex(arr), "hex");
 
-        this.A = G1Point( slice(arr, 0), slice(arr, 32) );
-        this.S = G1Point( slice(arr, 64), slice(arr, 96));
-        this.P = G1Point( slice(arr, 128), slice(arr, 160));
-        this.Q = G1Point( slice(arr, 192), slice(arr, 224));
-        this.U = G1Point( slice(arr, 256), slice(arr, 288));
-        this.V = G1Point( slice(arr, 320), slice(arr, 352));
-        this.X = G1Point( slice(arr, 384), slice(arr, 416));
-        this.Y = G1Point( slice(arr, 448), slice(arr, 480));
+        this.BA = G1Point( slice(arr, 0), slice(arr, 32) );
+        this.BS = G1Point( slice(arr, 64), slice(arr, 96));
+        this.A = G1Point( slice(arr, 128), slice(arr, 160));
+        this.B = G1Point( slice(arr, 192), slice(arr, 224));
+        this.C = G1Point( slice(arr, 256), slice(arr, 288));
+        this.D = G1Point( slice(arr, 320), slice(arr, 352));
+        this.E = G1Point( slice(arr, 384), slice(arr, 416));
+        this.F = G1Point( slice(arr, 448), slice(arr, 480));
 
         const m = Math.floor( (arr.length - 2144) / 576 );
         this.CLnG = new Array(m);
         this.CRnG = new Array(m);
         this.C_0G = new Array(m);
+        this.DG = new Array(m);
         this.y_0G = new Array(m);
+        this.gG = new Array(m);
         this.C_XG = new Array(m);
         this.y_XG = new Array(m);
-        this.DG = new Array(m);
-        this.gG = new Array(m);
         this.f = new Array(2 * m );
 
-        for (let i=0; i < m; i++) {
-            this.CLnG[i] = G1Point(slice(arr, 512 + i * 64), slice(arr, 544 + i * 64));
-            this.CRnG[i] = G1Point(slice(arr, 512 + (m + i) * 64), slice(arr, 544 + (m + i) * 64));
-            this.C_0G[i] = G1Point(slice(arr, 512 + m * 128 + i * 64), slice(arr, 544 + m * 128 + i * 64));
-            this.y_0G[i] = G1Point(slice(arr, 512 + m * 192 + i * 64), slice(arr, 544 + m * 192 + i * 64));
-            this.C_XG[i] = G1Point(slice(arr, 512 + m * 256 + i * 64), slice(arr, 544 + m * 256 + i * 64));
-            this.y_XG[i] = G1Point(slice(arr, 512 + m * 320 + i * 64), slice(arr, 544 + m * 320 + i * 64));
-            this.DG[i] = G1Point(slice(arr, 512 + m * 384 + i * 64), slice(arr, 544 + m * 384 + i * 64));
-            this.gG[i] = G1Point(slice(arr, 512 + m * 448 + i * 64), slice(arr, 544 + m * 448 + i * 64));
-            this.f[i] = slice(arr, 512 + m * 512 + i * 32);
-            this.f[i + m] = slice(arr, 512 + m * 544 + i * 32);
+        for (let k=0; k < m; k++) {
+            this.CLnG[k] = G1Point(slice(arr, 512 + k * 64), slice(arr, 544 + k * 64));
+            this.CRnG[k] = G1Point(slice(arr, 512 + (m + k) * 64), slice(arr, 544 + (m + k) * 64));
+            this.C_0G[k] = G1Point(slice(arr, 512 + m * 128 + k * 64), slice(arr, 544 + m * 128 + k * 64));
+            this.DG[k] = G1Point(slice(arr, 512 + m * 192 + k * 64), slice(arr, 544 + m * 192 + k * 64));
+            this.y_0G[k] = G1Point(slice(arr, 512 + m * 256 + k * 64), slice(arr, 544 + m * 256 + k * 64));
+            this.gG[k] = G1Point(slice(arr, 512 + m * 320 + k * 64), slice(arr, 544 + m * 320 + k * 64));
+            this.C_XG[k] = G1Point(slice(arr, 512 + m * 384 + k * 64), slice(arr, 544 + m * 384 + k * 64));
+            this.y_XG[k] = G1Point(slice(arr, 512 + m * 448 + k * 64), slice(arr, 544 + m * 448 + k * 64));
+            this.f[k] = slice(arr, 512 + m * 512 + k * 32);
+            this.f[k + m] = slice(arr, 512 + m * 544 + k * 32);
         }
 
         const starting = m * 576;
-        this.z_P = slice(arr, 512 + starting);
-        this.z_U = slice(arr, 544 + starting);
-        this.z_X = slice(arr, 576 + starting);
+        this.z_A = slice(arr, 512 + starting);
+        this.z_C = slice(arr, 544 + starting);
+        this.z_E = slice(arr, 576 + starting);
 
         this.CPrime = G1Point(slice(arr, 608 + starting), slice(arr, 640 + starting));
         this.DPrime = G1Point(slice(arr, 672 + starting), slice(arr, 704 + starting));
