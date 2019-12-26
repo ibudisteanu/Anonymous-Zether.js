@@ -106,11 +106,9 @@ class ZSC{
         const yHash = utils.keccak256( utils.encodedPackaged(y) );
         this._rollOver({block}, yHash);
 
-        // registration check here would be redundant, as any `transferFrom` the 0 address will necessarily fail. save an sload
         if (  bTransfer > MAX || bTransfer < 0 )throw "Deposit amount out of range."; // uint, so other way not necessary?
         if (  bTransfer + this.bTotal > MAX )throw "Fund pushes contract past maximum value.";
 
-        // if pTransfers[yHash] == [0, 0, 0, 0] then an add and a write will be equivalent...
         let scratch = this._getpTransfers(yHash)[0];
         const PScratch = G1Point(  scratch[0], scratch[1] );
 
@@ -201,9 +199,7 @@ class ZSC{
 
         if (C.length !== size) throw "Input array length mismatch!";
 
-        let result = 1;
-
-        for (let i=0; i < y.length; i++) {
+        for (let i=0; i < size; i++) {
 
             const yHash = utils.keccak256(utils.encodedPackaged(y[i]));
 
@@ -222,7 +218,7 @@ class ZSC{
 
                 scratch[0] = bn128.serialize(sum);
 
-                result = result & (sum.validate());
+                if (!sum.validate()) throw "error point 1";
 
                 const diff_2 = '0x' + BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ).toString(16); //for the test, it should be 0x61dea82c6dd354ccca55870e4883135525f2d55b1adb5c86ce92ba06512f953
 
@@ -233,7 +229,7 @@ class ZSC{
 
                 scratch[1] = bn128.serialize(sum2);
 
-                result = result & (sum2.validate());
+                if (!sum2.validate()) throw "error point 2";
 
             }
 
@@ -254,7 +250,7 @@ class ZSC{
 
                 CLn[i] = bn128.serialize(sum);
 
-                result = result & (sum.validate());
+                if (!sum.validate()) throw "error point 1"
 
                 const diff_2 = '0x' + BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ).toString(16); //for the test, it should be 0x61dea82c6dd354ccca55870e4883135525f2d55b1adb5c86ce92ba06512f953
 
@@ -265,12 +261,10 @@ class ZSC{
 
                 CRn[i] = bn128.serialize(sum2);
 
-                result = result & (sum2.validate());
+                if (!sum2.validate()) throw "error point 2";
 
 
             }
-
-            if ( !result ) throw "Elliptic curve operations failure. Bad points?";
 
         }
 

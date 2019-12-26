@@ -5,9 +5,9 @@ class AnonAuxiliaries {
 
         this.m = null;
         this.N = null;
-        this.d = null;
+        this.v = null;
         this.w = null;
-        this.dPow = null;
+        this.vPow = null;
         this.wPow = null;
         this.f = new Array(2); // could just allocate extra space in the proof?
         this.r = new Array(2); // each poly is an array of length N. evaluations of prods

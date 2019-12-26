@@ -2,9 +2,9 @@ const BN = require('bn.js')
 const EC = require('elliptic')
 const crypto = require('crypto')
 
-const FIELD_MODULUS = new BN("21888242871839275222246405745257275088696311157297823662689037894645226208583", 10);
+const FIELD_MODULUS = new BN("30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47", 16);
 const UNITY_MODULUS = new BN("9334303377689037989442018753807510978357674015322511348041267794643984346845", 10);
-const GROUP_MODULUS = new BN("21888242871839275222246405745257275088548364400416034343698204186575808495617", 10);
+const GROUP_MODULUS = new BN("30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001", 16);
 const B_MAX = 4294967295;
 
 const bn128 = {};
@@ -13,8 +13,8 @@ const bn128 = {};
 bn128.curve = new EC.curve.short({
     a: '0',
     b: '3',
-    p: FIELD_MODULUS.toString(16),
-    n: GROUP_MODULUS.toString(16),
+    p: FIELD_MODULUS,
+    n: GROUP_MODULUS,
     gRed: false,
     g: ['77da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4', '1485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875'],
 });
@@ -26,8 +26,8 @@ bn128.GROUP_MODULUS = GROUP_MODULUS;
 
 bn128.zero = bn128.curve.g.mul(0);
 
-bn128.p = BN.red(new BN(bn128.curve.p.toString(16), 16)); // temporary workaround due to
-bn128.q = BN.red(new BN(bn128.curve.n.toString(16), 16)); // https://github.com/indutny/elliptic/issues/191
+bn128.p = BN.red(bn128.curve.p); // temporary workaround due to
+bn128.q = BN.red(bn128.curve.n); // https://github.com/indutny/elliptic/issues/191
 
 bn128.B_MAX = B_MAX;
 bn128.B_MAX_BN = new BN(B_MAX).toRed(bn128.q);

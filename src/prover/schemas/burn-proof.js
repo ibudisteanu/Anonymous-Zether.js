@@ -10,13 +10,26 @@ const G1Point = utils.G1Point;
 class BurnProof {
 
     constructor() {
+        this.BA = null;
+        this.BS = null;
+        this.CLnPrime = null;
+        this.CRnPrime = null;
+        this.tCommits = [];
+        this.tHat = null;
+        this.tauX = null;
+        this.mu = null;
+        this.c = null;
+        this.s_sk = null;
+        this.s_vDiff = null;
+        this.s_nuDiff = null;
+        this.ipProof = null;
 
     };
 
     serialize () { // please initialize this before calling this method...
         var result = "0x";
-        result += bn128.representation(this.A).slice(2);
-        result += bn128.representation(this.S).slice(2);
+        result += bn128.representation(this.BA).slice(2);
+        result += bn128.representation(this.BS).slice(2);
 
         result += bn128.representation(this.CLnPrime).slice(2);
         result += bn128.representation(this.CRnPrime).slice(2);
@@ -42,8 +55,8 @@ class BurnProof {
 
         arr = Buffer.from( utils.fromHex(arr), "hex");
 
-        this.A = G1Point(slice(arr, 0), slice(arr, 32));
-        this.S = G1Point(slice(arr, 64), slice(arr, 96));
+        this.BA = G1Point(slice(arr, 0), slice(arr, 32));
+        this.BS = G1Point(slice(arr, 64), slice(arr, 96));
 
         this.CLnPrime = G1Point(slice(arr, 128), slice(arr, 160));
         this.CRnPrime = G1Point(slice(arr, 192), slice(arr, 224));

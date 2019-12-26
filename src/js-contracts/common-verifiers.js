@@ -40,10 +40,7 @@ class CommonVerifiers{
         ipAuxiliaries.hPrimes = this.params.hs.map( (it, index) => it.mul( auxiliaries.ys[index].redInvm()  ) ); //hadamardInv
         ipAuxiliaries.hExp = new FieldVector(auxiliaries.ys).times(  auxiliaries.z ).add( new FieldVector( auxiliaries.twoTimesZSquared ) ).getVector();
 
-        if (proof instanceof ZetherProof)
-            ipAuxiliaries.P = proof.BA.add(  proof.BS.mul( auxiliaries.x )).add( new GeneratorVector(this.params.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
-        else
-            ipAuxiliaries.P = proof.A.add(  proof.S.mul( auxiliaries.x )).add( new GeneratorVector(this.params.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
+        ipAuxiliaries.P = proof.BA.add(  proof.BS.mul( auxiliaries.x )).add( new GeneratorVector(this.params.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
 
         ipAuxiliaries.P = ipAuxiliaries.P.add( this.params.h.mul( BNFieldfromHex(proof.mu).redNeg() ));
         ipAuxiliaries.P = ipAuxiliaries.P.add( ipAuxiliaries.u_x.mul( BNFieldfromHex(proof.tHat) ));

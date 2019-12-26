@@ -6,7 +6,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "bn.js": "^5.0.0",
+    "bn.js": "^5.1.1",
     "clone": "^2.1.2",
     "ecurve-bn256": "^1.0.15",
     "elliptic": "^6.5.1",

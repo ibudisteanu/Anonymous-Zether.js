@@ -76,7 +76,7 @@ class ZVerifier{
 
 
         const anonAuxiliaries = new AnonAuxiliaries();
-        anonAuxiliaries.d = utils.hash(ABICoder.encodeParameters([
+        anonAuxiliaries.v = utils.hash(ABICoder.encodeParameters([
             'bytes32',
             'bytes32[2]',
             'bytes32[2]',
@@ -109,7 +109,7 @@ class ZVerifier{
             'bytes32[2][]',
             'bytes32[2][]',
         ], [
-            bn128.bytes(anonAuxiliaries.d),
+            bn128.bytes(anonAuxiliaries.v),
             proof.CLnG.map(bn128.serialize),
             proof.CRnG.map(bn128.serialize),
             proof.C_0G.map(bn128.serialize),
@@ -165,14 +165,14 @@ class ZVerifier{
             anonAuxiliaries.CLnR = anonAuxiliaries.CLnR.add( statement.CLn[i].mul( anonAuxiliaries.r[i][0]));
             anonAuxiliaries.CRnR = anonAuxiliaries.CRnR.add( statement.CRn[i].mul( anonAuxiliaries.r[i][0]));
         }
-        anonAuxiliaries.dPow = new BN(1).toRed(bn128.q);
+        anonAuxiliaries.vPow = new BN(1).toRed(bn128.q);
         anonAuxiliaries.C_XR = G1Point0();
         anonAuxiliaries.y_XR = G1Point0();
         for (let i = 0; i < anonAuxiliaries.N; i++) {
-            anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( anonAuxiliaries.CR[ Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.dPow));
-            anonAuxiliaries.y_XR = anonAuxiliaries.y_XR.add(anonAuxiliaries.yR[  Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.dPow));
+            anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( anonAuxiliaries.CR[ Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.vPow));
+            anonAuxiliaries.y_XR = anonAuxiliaries.y_XR.add(anonAuxiliaries.yR[  Math.floor(i / 2) ][i % 2].mul( anonAuxiliaries.vPow));
             if (i > 0)
-                anonAuxiliaries.dPow = anonAuxiliaries.dPow.redMul(anonAuxiliaries.d);
+                anonAuxiliaries.vPow = anonAuxiliaries.vPow.redMul(anonAuxiliaries.v);
 
         }
         anonAuxiliaries.wPow = new BN(1).toRed(bn128.q);

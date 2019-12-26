@@ -82,8 +82,8 @@ class BurnVerifier{
             'bytes32[2]',
         ], [
             bn128.bytes(statementHash),
-            bn128.serialize(proof.A),
-            bn128.serialize(proof.S),
+            bn128.serialize(proof.BA),
+            bn128.serialize(proof.BS),
             bn128.serialize(proof.CLnPrime),
             bn128.serialize(proof.CRnPrime),
         ]));

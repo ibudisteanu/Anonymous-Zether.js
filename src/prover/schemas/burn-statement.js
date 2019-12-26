@@ -5,7 +5,7 @@ class BurnStatement{
         this.CRn = null;
         this.y = null;
         this.bTransfer = null;
-        this.epoch = null; // or uint8?
+        this.epoch = null;
         this.sender = null;
         this.u = null;
     }
