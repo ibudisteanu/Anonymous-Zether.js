@@ -5,6 +5,8 @@ const ABICoder = require('web3-eth-abi');
 const { FieldVector, AdvancedMath } = require('./../prover/algebra.js');
 const GeneratorParams = require('./../prover/generator-params');
 
+const consts = require('./../consts');
+
 const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
 const BNFieldfromHex = utils.BNFieldfromHex;
@@ -192,6 +194,8 @@ class ZVerifier{
         }
         anonAuxiliaries.DR = anonAuxiliaries.DR.add( statement.D.mul( anonAuxiliaries.wPow));
         anonAuxiliaries.gR = anonAuxiliaries.gR.add( this.params.g.mul( anonAuxiliaries.wPow));
+        anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( this.params.g.mul( consts.FEE_BN.neg() ).mul(  anonAuxiliaries.wPow )); // this "subtracts back" the fee, which we added to the recipient's amount, before checking for balance.
+
 
         const zetherAuxiliaries = new ZetherAuxiliaries();
 

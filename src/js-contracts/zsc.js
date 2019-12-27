@@ -250,7 +250,7 @@ class ZSC{
 
                 CLn[i] = bn128.serialize(sum);
 
-                if (!sum.validate()) throw "error point 1"
+                if (!sum.validate()) throw "error point 1";
 
                 const diff_2 = '0x' + BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ).toString(16); //for the test, it should be 0x61dea82c6dd354ccca55870e4883135525f2d55b1adb5c86ce92ba06512f953
 
@@ -268,6 +268,24 @@ class ZSC{
 
         }
 
+        /**
+         * MINER FEE
+         */
+
+        this._rollOver({block}, consts.MINER_HASH);
+        const scratch = this._getpTransfers( consts.MINER_HASH );
+
+        const PScratch = G1Point(  scratch[0][0], scratch[0][1] );
+        const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
+        const Sub = consts.FEE_BN;
+
+        const out1 = PInput.mul(Sub);
+        const out2 = PScratch.add( out1 );
+
+        if (!out1.validate() || !out2.validate()) throw "invalid points";
+
+        scratch[0] = bn128.serialize(out2);
+        this._setpTransfers( consts.MINER_HASH, scratch );
 
         const uHash = utils.keccak256(  utils.encodedPackaged( u ) ); // NO modulo
 
@@ -426,7 +444,7 @@ class ZSC{
         const Kr = bn128.curve.g.mul( proof.s ).add(  bn128.unserialize(D).mul( proof.c.neg() ) );
 
         //Y_r
-        const Yr = bn128.unserialize( y[i] ).mul( proof.s ).add(  bn128.curve.g.mul( new BN(b)).add( bn128.unserialize(C[i])).mul( proof.c.neg() ));
+        const Yr = bn128.unserialize( y[i] ).mul( proof.s ).add(  bn128.curve.g.mul( new BN( b - consts.FEE )).add( bn128.unserialize(C[i])).mul( proof.c.neg() ));
 
         const hash = utils.hash( bn128.representation(Kr) + bn128.representation(Yr).substr(2) );
 

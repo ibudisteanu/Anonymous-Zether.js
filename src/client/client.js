@@ -237,7 +237,8 @@ class Client {
         const result = ZSC.simulateAccounts(y, consts.getEpoch() );
 
         const r = bn128.randomScalar();
-        let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(value) : i === index[1] ? new BN(-value) : new BN(0)).add(bn128.unserialize(party).mul(r)));
+        let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(value) : i === index[1] ? new BN(-value + consts.FEE ) : new BN(0)).add(bn128.unserialize(party).mul(r)));
+
         let D = bn128.curve.g.mul(r);
         const CLn = result.map((simulated, i) => bn128.serialize(bn128.unserialize(simulated[0]).add(C[i].neg())));
         const CRn = result.map((simulated) => bn128.serialize(bn128.unserialize(simulated[1]).add(D.neg())));

@@ -3,6 +3,8 @@ const BN = require('bn.js');
 
 const bn128 = require('../utils/bn128.js');
 const utils = require('../utils/utils.js');
+const consts = require('./../consts');
+
 const { Convolver, FieldVector, FieldVectorPolynomial, GeneratorVector, PolyCommitment, Polynomial } = require('./algebra.js');
 const GeneratorParams = require('./../prover/generator-params');
 
@@ -140,9 +142,9 @@ class ZetherProver {
         proof.y_XG = Array.from({ length: m }).map((_, k) => this.params.getG().mul(omega[k]));
         var vPow = new BN(1).toRed(bn128.q);
         for (var i = 0; i < N; i++) { // could turn this into a complicated reduce, but...
-            var temp = this.params.getG().mul(witness['bTransfer'].redMul(vPow));
+            var temp = this.params.getG().mul(vPow);
             var poly = i % 2 ? Q : P; // clunky, i know, etc. etc.
-            proof.C_XG = proof.C_XG.map((C_XG_k, k) => C_XG_k.add(temp.mul(poly[k].getVector()[(witness['index'][0] + N - (i - i % 2)) % N].redSub(poly[k].getVector()[(witness['index'][1] + N - (i - i % 2)) % N]))));
+            proof.C_XG = proof.C_XG.map((C_XG_k, k) => C_XG_k.add(temp.mul(witness['bTransfer'].redMul(poly[k].getVector()[(witness['index'][0] + N - (i - i % 2)) % N]).redAdd(witness['bTransfer'].redNeg().redAdd( consts.FEE_BN ).redMul(poly[k].getVector()[(witness['index'][1] + N - (i - i % 2)) % N])))));
             if (i != 0)
                 vPow = vPow.redMul(v);
         }
