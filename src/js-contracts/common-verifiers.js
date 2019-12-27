@@ -56,7 +56,7 @@ class CommonVerifiers{
                 'bytes32[2]',
                 'bytes32[2]',
             ], [
-                '0x'+ipAuxiliaries.o.toString(16),
+                bn128.bytes(ipAuxiliaries.o.toString(16)),
                 bn128.serialize(ipProof.ls[i]),
                 bn128.serialize(ipProof.rs[i]),
             ]));

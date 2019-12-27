@@ -209,7 +209,7 @@ class ZSC{
 
 
             {
-                const diff = '0x' + BNFieldfromHex("30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( C[i][1] ) ).toString(16); //for the test, it should be 0xaa3d1123200d8ed71d14a4d3bb4b6efac36bc4a9a8a5d00dd4b273f4a8882ce
+                const diff = bn128.bytes( BNFieldfromHex("30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( C[i][1] ) ) );
 
                 const P1 = G1Point(  scratch[0][0] ,  scratch[0][1]  );
                 const P2 = G1Point(  C[i][0] ,  diff  );
@@ -220,7 +220,7 @@ class ZSC{
 
                 if (!sum.validate()) throw "error point 1";
 
-                const diff_2 = '0x' + BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ).toString(16); //for the test, it should be 0x61dea82c6dd354ccca55870e4883135525f2d55b1adb5c86ce92ba06512f953
+                const diff_2 = bn128.bytes( BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ) );
 
                 const P3 = G1Point(  scratch[1][0] ,  scratch[1][1]   );
                 const P4 = G1Point(  D[0] ,  diff_2  );
@@ -241,7 +241,7 @@ class ZSC{
 
             {
 
-                const diff = '0x' + BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( C[i][1] )).toString(16); //for the test, it should be 0xaa3d1123200d8ed71d14a4d3bb4b6efac36bc4a9a8a5d00dd4b273f4a8882ce
+                const diff = bn128.bytes( BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( C[i][1] )) );
 
                 const P1 = G1Point(  scratch[0][0] ,  scratch[0][1]  );
                 const P2 = G1Point(  C[i][0] ,  diff  );
@@ -252,7 +252,7 @@ class ZSC{
 
                 if (!sum.validate()) throw "error point 1"
 
-                const diff_2 = '0x' + BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ).toString(16); //for the test, it should be 0x61dea82c6dd354ccca55870e4883135525f2d55b1adb5c86ce92ba06512f953
+                const diff_2 = bn128.bytes( BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ) );
 
                 const P3 = G1Point(  scratch[1][0] ,  scratch[1][1]   );
                 const P4 = G1Point(  D[0] ,  diff_2  );

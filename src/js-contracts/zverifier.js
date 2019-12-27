@@ -218,7 +218,7 @@ class ZVerifier{
         zetherAuxiliaries.z = utils.hash(ABICoder.encodeParameters([
             `bytes32`,
         ], [
-            '0x'+zetherAuxiliaries.y.toString("hex"),
+            bn128.bytes(zetherAuxiliaries.y),
         ]));
 
 
