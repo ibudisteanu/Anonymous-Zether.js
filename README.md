@@ -62,7 +62,7 @@ Verifier - verify proof `(c, s)`\
 ![alt text](https://latex.codecogs.com/gif.latex?Y_%7Br%7D%20%3D%20y_%7Bi%7D%5E%7Bs%7D%5Ccdot%20%28g%5E%7Bb%7D%5Ccdot%20C_%7Bi%7D%29%5E%7B-c%7D) - computing `Y_r`\
 ![alt text](https://latex.codecogs.com/gif.latex?c%20%3D%20Hash%28K_%7Br%7D%2C%20Y_%7Br%7D%29) - equation verification
 
-### 3. Todo by priorities:
+### 3. Under development:
 
 ##### 1. Paying gas in Zether.
 
@@ -87,7 +87,9 @@ It enables Zether to be used as a native currency to pay the gas in Zether to th
 
 ## Special thanks
 
-We want to express our gratitude for the implementation and the help offered on slack and github to:
+We want to express our gratitude for the implementation and the help offered us over slack and github.
+
+Main contributors
 
 Benjamin Diamond
 [@benediamond]( https://github.com/benediamond)
