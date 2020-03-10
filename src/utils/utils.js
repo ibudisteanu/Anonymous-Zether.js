@@ -2,11 +2,29 @@ const bn128 = require('./bn128.js')
 const BN = require('bn.js')
 const { soliditySha3 } = require('web3-utils');
 const createKeccakHash = require('keccak');
+const ABICoder = require('web3-eth-abi');
 
 const utils = {};
 
 utils.determinePublicKey = (x) => {
     return bn128.serialize(bn128.curve.g.mul(x));
+};
+
+utils.sign = (address, keypair) => {
+    var k = bn128.randomScalar();
+    var K = bn128.curve.g.mul(k);
+    var c = utils.hash(ABICoder.encodeParameters([
+        'address',
+        'bytes32[2]',
+        'bytes32[2]',
+    ], [
+        address,
+        keypair['y'],
+        bn128.serialize(K),
+    ]));
+
+    var s = c.redMul(keypair['x']).redAdd(k);
+    return [bn128.bytes(c), bn128.bytes(s)];
 };
 
 
@@ -37,8 +55,8 @@ utils.u = (epoch, x) => {
     return utils.gEpoch(epoch).mul(x);
 };
 
-utils.hash = (...args) => { // ags are serialized
-    return new BN(soliditySha3(...args).slice(2), 16).toRed(bn128.q);
+utils.hash = (encoded) => { // ags are serialized
+    return new BN(soliditySha3(encoded).slice(2), 16).toRed(bn128.q);
 };
 
 utils.keccak256 = (hex)=>{

@@ -1,5 +1,4 @@
 const BN = require('bn.js');
-const ABICoder = require('web3-eth-abi');
 
 const consts = require('./../consts');
 const utils = require('../utils/utils.js');
@@ -32,19 +31,26 @@ class Client {
 
     }
 
-    async initialize (secret) {
+    async register (secret) {
 
         if (secret === undefined) {
             const keypair = utils.createAccount();
             this.account.keypair = keypair;
             console.log("New account generated.");
 
+
+            var [c, s] = utils.sign( ZSC.address, keypair);
+
+            const out = ZSC.register( this.account.keypair.y, c, s);
+            console.info(out);
+
+
         } else {
 
             const x = utils.BNFieldfromHex(  secret );
             this.account.keypair = { x, 'y': utils.determinePublicKey(x) };
 
-            this.account.decodeBalance( );
+            this.account.decodeBalance( );  // warning: won't register you. assuming you registered when you first created the account.
 
             console.log("Account recovered successfully.");
 
@@ -236,12 +242,17 @@ class Client {
 
         const result = ZSC.simulateAccounts(y, consts.getEpoch() );
 
+        const unserialized = result.map((account) => [bn128.unserialize(account[0]), bn128.unserialize(account[1])]);
+
+        if (unserialized.some((account) => account[0].eq(bn128.zero) && account[1].eq(bn128.zero)))
+            throw new Error("Please make sure all parties (including decoys) are registered."); // todo: better error message, i.e., which friend?
+
         const r = bn128.randomScalar();
         let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(value) : i === index[1] ? new BN(-value + consts.FEE ) : new BN(0)).add(bn128.unserialize(party).mul(r)));
 
         let D = bn128.curve.g.mul(r);
-        const CLn = result.map((simulated, i) => bn128.serialize(bn128.unserialize(simulated[0]).add(C[i].neg())));
-        const CRn = result.map((simulated) => bn128.serialize(bn128.unserialize(simulated[1]).add(D.neg())));
+        const CLn = unserialized.map((account, i) => bn128.serialize( account[0].add(C[i].neg())));
+        const CRn = unserialized.map((account) => bn128.serialize( account[1].add(D.neg())));
         C = C.map(bn128.serialize);
         D = bn128.serialize(D);
 

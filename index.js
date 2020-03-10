@@ -13,11 +13,11 @@ async function run(){
     var dave = new Client( account );
     var eve = new Client( account );
 
-    await alice.initialize();
-    await bob.initialize();
-    await carol.initialize();
-    await dave.initialize();
-    await eve.initialize();
+    await alice.register();
+    await bob.register();
+    await carol.register();
+    await dave.register();
+    await eve.register();
 
     /**
      * A => B, D, E

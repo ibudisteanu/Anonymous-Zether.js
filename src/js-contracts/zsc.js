@@ -1,4 +1,5 @@
 const clone = require('clone');
+const ABICoder = require('web3-eth-abi');
 
 const utils  = require("./../utils/utils");
 const BN = require('bn.js')
@@ -20,6 +21,8 @@ const EventEmitter = require('events').EventEmitter;
 class ZSC{
 
     constructor() {
+
+        this.address = '0x5d6c4ebf1b789883b58b0d7a7fe937e275212960';
 
         //mapping(bytes32 => bytes32[2][2]) acc; // main account mapping
         this._acc = {};
@@ -101,9 +104,60 @@ class ZSC{
         this._lastRollOver[ utils.fromHex(hash) ] = value;
     }
 
+    registered(yHash){
+
+        const acc = this._getAccMap(yHash);
+        const pTransfers = this._getpTransfers(yHash);
+
+        const zero = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+        return acc[0][0] !== zero || acc[0][1] !== zero || acc[1][0] !== zero || acc[1][1] !== zero ||
+               pTransfers[0][0] !== zero || pTransfers[0][1] !== zero || pTransfers[1][0] !== zero || pTransfers[1][1] !== zero;
+    }
+
+    register(y, c,  s){
+
+        const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
+        const POut1 = PInput.mul( new BN( utils.fromHex(s), 16 ) );  // m := g^s
+        if ( !POut1.validate() ) throw "Invalid POut1";
+
+        const PY = G1Point(  y[0],  y[1]  );
+        const Sub = new BN(utils.fromHex(c), 16).toRed( bn128.q ).redNeg(); //negate c in F_q
+        const POut2 = PY.mul( Sub );
+        if (!POut2.validate() ) throw "invalid Pout2";
+
+        const K = POut1.add(POut2);
+
+        const challenge = utils.hash(ABICoder.encodeParameters([
+            'address',
+            'bytes32[2]',
+            'bytes32[2]',
+        ], [
+            this.address,
+            y,
+            bn128.serialize(K),
+        ]));
+
+        if (!challenge.eq( new BN( utils.fromHex(c), 16 ) ))
+            throw new Error('Invalid registration signature!');
+
+        const yHash = utils.keccak256( utils.encodedPackaged(y) );
+        if ( this.registered(yHash) ) throw "Account already registered!";
+
+        const scratch = [
+            y,
+            bn128.serialize(PInput),
+        ];
+
+        this._setpTransfers(yHash, scratch );
+
+    }
+
     fund({block}, y, bTransfer){
 
         const yHash = utils.keccak256( utils.encodedPackaged(y) );
+        if (!this.registered(yHash)) throw new Error("Account not yet registered.");
+
         this._rollOver({block}, yHash);
 
         if (  bTransfer > MAX || bTransfer < 0 )throw "Deposit amount out of range."; // uint, so other way not necessary?
@@ -144,6 +198,7 @@ class ZSC{
         for (let i=0; i < size; i++){
 
             const yHash = utils.keccak256( utils.encodedPackaged(y[i]) );
+
             accounts[i] = this._getAccMap(yHash);
 
             if (this._getLastRollOver(yHash) < epoch) {
@@ -202,6 +257,7 @@ class ZSC{
         for (let i=0; i < size; i++) {
 
             const yHash = utils.keccak256(utils.encodedPackaged(y[i]));
+            if (!this.registered(yHash)) throw new Error("Account not yet registered.");
 
             this._rollOver({block}, yHash);
 
@@ -356,6 +412,8 @@ class ZSC{
     burn ({block}, y, bTransfer, u, proof, sender){
 
         const yHash = utils.keccak256(utils.encodedPackaged( y ));
+        if (!this.registered(yHash)) throw new Error("Account not yet registered.");
+
         this._rollOver({block}, yHash);
 
         if ( 0 > bTransfer || bTransfer > MAX) throw "Transfer amount out of range";
@@ -412,7 +470,7 @@ class ZSC{
     // CL and CR are "flat", x is a BN.
     readBalance (CL, CR, x) {
 
-        const gB = CL.add(CR.mul(x.neg()));
+        const gB = CL.add(CR.mul(x.redNeg()));
 
         let accumulator = bn128.zero;
         for (let  i = 0; i < bn128.B_MAX; i++) {

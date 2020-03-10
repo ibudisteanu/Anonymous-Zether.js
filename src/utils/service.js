@@ -9,10 +9,8 @@ class Service {
         this.burn = new BurnProver();
     }
 
-    proveTransfer (CLn, CRn, C, D, y, epoch, sk, r, bTransfer, bDiff, index) { // no longer async.
+    proveTransfer (CLn, CRn, C, D, y, epoch, sk, r, bTransfer, bDiff, index) {
 
-        // CLn, CRn, Y, x are "live" (point, BN etc)
-        // epoch, bTransfer, bDiff, index are "plain / primitive" JS types.
         var statement = {};
         statement['CLn'] = CLn;
         statement['CRn'] = CRn;

@@ -31,6 +31,11 @@ class ZVerifier{
 
         this._commonVerifier = new CommonVerifier( 'verifier', this.params, g_m, g_n);
 
+        // this._commonVerifier.params.gs.map( (it, index) => console.log( 'gs['+index+'] = ' + bn128.serialize(it)) );
+        // console.log('--------------');
+        // console.log('--------------');
+        // this._commonVerifier.params.hs.map( (it, index) => console.log( 'hs['+index+'] = ' + bn128.serialize(it)) );
+
     }
 
     verifyTransfer(CLn, CRn, C, D, y, epoch, u, proof){

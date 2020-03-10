@@ -48,14 +48,14 @@ class ZetherProver {
             'bytes32[2][]',
             'bytes32[2]',
             'bytes32[2][]',
-            'uint256'
+            'uint256',
         ], [
             statement['CLn'],
             statement['CRn'],
             statement['C'],
             statement['D'],
             statement['y'],
-            statement['epoch']
+            statement['epoch'],
         ]));
 
         statement['CLn'] = new GeneratorVector(statement['CLn'].map(bn128.unserialize));
@@ -120,10 +120,10 @@ class ZetherProver {
             bn128.serialize(proof.F),
         ]));
 
-        var pi = Array.from({ length: m }).map(bn128.randomScalar);
-        var chi = Array.from({ length: m }).map(bn128.randomScalar); // for sender, recipient and the rest.
-        var sigma = Array.from({ length: m }).map(bn128.randomScalar); // for sender
-        var omega = Array.from({ length: m }).map(bn128.randomScalar); // for sender, recipient and the rest.
+        var phi = Array.from({ length: m }).map(bn128.randomScalar);
+        var chi = Array.from({ length: m }).map(bn128.randomScalar);
+        var psi = Array.from({ length: m }).map(bn128.randomScalar);
+        var omega = Array.from({ length: m }).map(bn128.randomScalar);
 
         var P = [];
         var Q = [];
@@ -132,12 +132,12 @@ class ZetherProver {
         P = Array.from({ length: m }).map((_, k) => new FieldVector(P.map((P_i) => P_i[k])));
         Q = Array.from({ length: m }).map((_, k) => new FieldVector(Q.map((Q_i) => Q_i[k])));
 
-        proof.CLnG = Array.from({ length: m }).map((_, k) => statement['CLn'].commit(P[k]).add(statement['y'].getVector()[witness['index'][0]].mul(pi[k])));
-        proof.CRnG = Array.from({ length: m }).map((_, k) => statement['CRn'].commit(P[k]).add(this.params.getG().mul(pi[k])));
+        proof.CLnG = Array.from({ length: m }).map((_, k) => statement['CLn'].commit(P[k]).add(statement['y'].getVector()[witness['index'][0]].mul(phi[k])));
+        proof.CRnG = Array.from({ length: m }).map((_, k) => statement['CRn'].commit(P[k]).add(this.params.getG().mul(phi[k])));
         proof.C_0G = Array.from({ length: m }).map((_, k) => statement['C'].commit(P[k]).add(statement['y'].getVector()[witness['index'][0]].mul(chi[k])));
         proof.DG = Array.from({ length: m }).map((_, k) => this.params.getG().mul(chi[k]));
-        proof.y_0G = Array.from({ length: m }).map((_, k) => statement['y'].commit(P[k]).add(statement['y'].getVector()[witness['index'][0]].mul(sigma[k])));
-        proof.gG = Array.from({ length: m }).map((_, k) => this.params.getG().mul(sigma[k]));
+        proof.y_0G = Array.from({ length: m }).map((_, k) => statement['y'].commit(P[k]).add(statement['y'].getVector()[witness['index'][0]].mul(psi[k])));
+        proof.gG = Array.from({ length: m }).map((_, k) => this.params.getG().mul(psi[k]));
         proof.C_XG = Array.from({ length: m }).map((_, k) => statement['D'].mul(omega[k]));
         proof.y_XG = Array.from({ length: m }).map((_, k) => this.params.getG().mul(omega[k]));
         var vPow = new BN(1).toRed(bn128.q);
@@ -186,10 +186,10 @@ class ZetherProver {
 
         var wPow = new BN(1).toRed(bn128.q);
         for (var k = 0; k < m; k++) {
-            CRnR = CRnR.add(this.params.getG().mul(pi[k].redNeg().redMul(wPow)));
+            CRnR = CRnR.add(this.params.getG().mul(phi[k].redNeg().redMul(wPow)));
             DR = DR.add(this.params.getG().mul(chi[k].redNeg().redMul(wPow)));
-            y_0R = y_0R.add(statement['y'].getVector()[witness['index'][0]].mul(sigma[k].redNeg().redMul(wPow)));
-            gR = gR.add(this.params.getG().mul(sigma[k].redNeg().redMul(wPow)));
+            y_0R = y_0R.add(statement['y'].getVector()[witness['index'][0]].mul(psi[k].redNeg().redMul(wPow)));
+            gR = gR.add(this.params.getG().mul(psi[k].redNeg().redMul(wPow)));
             y_XR = y_XR.add(proof.y_XG[k].mul(wPow.neg()));
             p = p.add(P[k].times(wPow));
             q = q.add(Q[k].times(wPow));
