@@ -3,8 +3,8 @@ const EC = require('elliptic')
 const crypto = require('crypto')
 
 const FIELD_MODULUS = new BN("30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47", 16);
-const UNITY_MODULUS = new BN("9334303377689037989442018753807510978357674015322511348041267794643984346845", 10);
 const GROUP_MODULUS = new BN("30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001", 16);
+const UNITY_MODULUS = new BN("14a3074b02521e3b1ed9852e5028452693e87be4e910500c7ba9bbddb2f46edd", 16); // primitive 2^28th root of unity modulo q.
 const B_MAX = 4294967295;
 
 const bn128 = {};
@@ -25,8 +25,8 @@ bn128.GROUP_MODULUS = GROUP_MODULUS;
 
 bn128.zero = bn128.curve.g.mul(0);
 
-bn128.p = BN.red(bn128.curve.p); // temporary workaround due to
-bn128.q = BN.red(bn128.curve.n); // https://github.com/indutny/elliptic/issues/191
+bn128.p = BN.red(bn128.curve.p);
+bn128.q = BN.red(bn128.curve.n);
 
 bn128.B_MAX = B_MAX;
 bn128.B_MAX_BN = new BN(B_MAX).toRed(bn128.q);

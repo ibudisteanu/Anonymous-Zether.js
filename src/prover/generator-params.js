@@ -9,7 +9,7 @@ class GeneratorParamsData {
     constructor(n){
 
         this.g = utils.mapInto(soliditySha3("G"));
-        this.h = utils.mapInto(soliditySha3("V"));
+        this.h = utils.mapInto(soliditySha3("H"));
 
         this.gs = [];
         this.hs = [];

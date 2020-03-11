@@ -135,10 +135,10 @@ class BurnProver {
 
 
         var gs = this.params.getGs();
-        var hsPrime = this.params.getHs().hadamard(ys.invert());
+        var hPrimes = this.params.getHs().hadamard(ys.invert());
         var hExp = ys.times(z).add(twoTimesZs);
-        var Z = proof.BA.add(proof.BS.mul(x)).add(gs.sum().mul(z.redNeg())).add(hsPrime.commit(hExp)); // rename of P
-        Z = Z.add(this.params.getH().mul(proof.mu.redNeg())); // Statement P of protocol 1. should this be included in the calculation of v...?
+        var P = proof.BA.add(proof.BS.mul(x)).add(gs.sum().mul(z.redNeg())).add(hPrimes.commit(hExp)); // rename of P
+        P = P.add(this.params.getH().mul(proof.mu.redNeg())); // Statement P of protocol 1. should this be included in the calculation of v...?
 
         var o = utils.hash(ABICoder.encodeParameters([
             'bytes32',
@@ -147,11 +147,11 @@ class BurnProver {
         ]));
 
         var u_x = this.params.getG().mul(o); // Begin Protocol 1. this is u^x in Protocol 1. use our g for their u, our o for their x.
-        var ZPrime = Z.add(u_x.mul(proof.tHat)); // corresponds to P' in protocol 1.
-        var primeBase = new GeneratorParams(u_x, gs, hsPrime);
+        var P = P.add(u_x.mul(proof.tHat)); // corresponds to P' in protocol 1.
+        var primeBase = new GeneratorParams(u_x, gs, hPrimes);
         var ipStatement = {
             primeBase: primeBase,
-            P: ZPrime
+            P: P
         };
         var ipWitness = {
             l: lPoly.evaluate(x),
