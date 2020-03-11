@@ -5,8 +5,6 @@ const ABICoder = require('web3-eth-abi');
 const { FieldVector, AdvancedMath } = require('./../prover/algebra.js');
 const GeneratorParams = require('./../prover/generator-params');
 
-const G1Point = utils.G1Point;
-const G1Point0 = utils.G1Point0;
 const BNFieldfromHex = utils.BNFieldfromHex;
 
 const BN = require('bn.js');
@@ -39,12 +37,12 @@ class BurnVerifier{
         // and your strings are less than 64 characters, they will be padded on the right, not the left. should hopefully not be an issue,
         // as this will typically be called simply by the other contract. still though, beware
 
-        statement.CLn = G1Point( CLn[0], CLn[1] );
-        statement.CRn = G1Point( CRn[0], CRn[1] );
-        statement.y = G1Point( y[0], y[1] );
+        statement.CLn = CLn;
+        statement.CRn = CRn;
+        statement.y = y;
         statement.bTransfer = bTransfer;
         statement.epoch = epoch;
-        statement.u = G1Point( u[0], u[1] );
+        statement.u = u;
         statement.sender = sender;
 
         const burnProof = new BurnProof();
@@ -117,15 +115,15 @@ class BurnVerifier{
         burnAuxiliaries.tEval = proof.tCommits.getVector()[0].mul( burnAuxiliaries.x).add( proof.tCommits.getVector()[1].mul( burnAuxiliaries.x.redMul(burnAuxiliaries.x) )); // replace with "commit"?
 
         const sigmaAuxiliaries = new SigmaAuxiliaries();
-        sigmaAuxiliaries.A_y = this.params.g.mul( BNFieldfromHex(proof.s_sk) ).add( statement.y.mul( BNFieldfromHex(proof.c).redNeg() ));
+        sigmaAuxiliaries.A_y = utils.g().mul( BNFieldfromHex(proof.s_sk) ).add( statement.y.mul( BNFieldfromHex(proof.c).redNeg() ));
         sigmaAuxiliaries.gEpoch = utils.gEpoch( statement.epoch );
 
         sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( BNFieldfromHex(proof.s_sk)).add( statement.u.mul( BNFieldfromHex(proof.c).redNeg()));
         sigmaAuxiliaries.c_commit = statement.CRn.add( proof.CRnPrime ).mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.add( proof.CLnPrime ).mul( BNFieldfromHex(proof.c).redNeg())).mul( burnAuxiliaries.zs[0] );
 
-        sigmaAuxiliaries.A_t = this.params.g.mul(  burnAuxiliaries.t ).add( this.params.h.mul( BNFieldfromHex(proof.tauX) ) ).add( burnAuxiliaries.tEval.neg() ).mul( BNFieldfromHex(proof.c) ).add( sigmaAuxiliaries.c_commit);
-        sigmaAuxiliaries.A_CLn = this.params.g.mul( BNFieldfromHex(proof.s_vDiff) ).add( statement.CRn.mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.mul( BNFieldfromHex(proof.c).redNeg())));
-        sigmaAuxiliaries.A_CLnPrime = this.params.h.mul( BNFieldfromHex(proof.s_nuDiff) ).add( proof.CRnPrime.mul( BNFieldfromHex(proof.s_sk) )).add(  proof.CLnPrime.mul( BNFieldfromHex(proof.c).redNeg()));
+        sigmaAuxiliaries.A_t = utils.g().mul(  burnAuxiliaries.t ).add( utils.h().mul( BNFieldfromHex(proof.tauX) ) ).add( burnAuxiliaries.tEval.neg() ).mul( BNFieldfromHex(proof.c) ).add( sigmaAuxiliaries.c_commit);
+        sigmaAuxiliaries.A_CLn = utils.g().mul( BNFieldfromHex(proof.s_vDiff) ).add( statement.CRn.mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.mul( BNFieldfromHex(proof.c).redNeg())));
+        sigmaAuxiliaries.A_CLnPrime = utils.h().mul( BNFieldfromHex(proof.s_nuDiff) ).add( proof.CRnPrime.mul( BNFieldfromHex(proof.s_sk) )).add(  proof.CLnPrime.mul( BNFieldfromHex(proof.c).redNeg()));
 
         sigmaAuxiliaries.c = utils.hash(ABICoder.encodeParameters([
             'bytes32',

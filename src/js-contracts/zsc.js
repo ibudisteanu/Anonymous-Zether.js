@@ -9,6 +9,8 @@ const { FieldVector } = require('./../prover/algebra.js');
 const bn128 = require('../utils/bn128.js');
 const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
+const G1PointArray = utils.G1PointArray;
+
 const BNFieldfromHex = utils.BNFieldfromHex;
 
 const MAX = 4294967295; // 2^32 - 1 // no sload for constants...!
@@ -118,7 +120,7 @@ class ZSC{
     register(y, c,  s){
 
         const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
-        const POut1 = PInput.mul( new BN( utils.fromHex(s), 16 ) );  // m := g^s
+        const POut1 = PInput.mul( BNFieldfromHex(s) );  // m := g^s
         if ( !POut1.validate() ) throw "Invalid POut1";
 
         const PY = G1Point(  y[0],  y[1]  );
@@ -138,7 +140,7 @@ class ZSC{
             bn128.serialize(K),
         ]));
 
-        if (!challenge.eq( new BN( utils.fromHex(c), 16 ) ))
+        if (!challenge.eq( BNFieldfromHex( c ) ))
             throw new Error('Invalid registration signature!');
 
         const yHash = utils.keccak256( utils.encodedPackaged(y) );
@@ -457,7 +459,7 @@ class ZSC{
 
         if (this._nonceSet[ utils.fromHex( uHash ) ]) throw "Nonce already seen!";
 
-        if ( !BurnerVerifier.verifyBurn(scratch[0], scratch[1], y, bTransfer, this.lastGlobalUpdate, u, sender, proof) ) throw "Burn proof verification failed!";
+        if ( !BurnerVerifier.verifyBurn( G1PointArray(scratch[0]), G1PointArray(scratch[1]), G1PointArray(y), bTransfer, this.lastGlobalUpdate, G1PointArray(u), sender, proof) ) throw "Burn proof verification failed!";
 
         //require(coin.transfer(msg.sender, bTransfer), "This shouldn't fail... Something went severely wrong.");
 

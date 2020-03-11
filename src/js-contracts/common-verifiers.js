@@ -36,13 +36,13 @@ class CommonVerifiers{
         ], [
             bn128.bytes(sigmaAuxiliaries.c),
         ]));
-        ipAuxiliaries.u_x = this.params.g.mul( ipAuxiliaries.o );
+        ipAuxiliaries.u_x = utils.g().mul( ipAuxiliaries.o );
         ipAuxiliaries.hPrimes = this.params.hs.map( (it, index) => it.mul( auxiliaries.ys[index].redInvm()  ) ); //hadamardInv
         ipAuxiliaries.hExp = new FieldVector(auxiliaries.ys).times(  auxiliaries.z ).add( new FieldVector( auxiliaries.twoTimesZSquared ) ).getVector();
 
         ipAuxiliaries.P = proof.BA.add(  proof.BS.mul( auxiliaries.x )).add( new GeneratorVector(this.params.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
 
-        ipAuxiliaries.P = ipAuxiliaries.P.add( this.params.h.mul( BNFieldfromHex(proof.mu).redNeg() ));
+        ipAuxiliaries.P = ipAuxiliaries.P.add( utils.h().mul( BNFieldfromHex(proof.mu).redNeg() ));
         ipAuxiliaries.P = ipAuxiliaries.P.add( ipAuxiliaries.u_x.mul( BNFieldfromHex(proof.tHat) ));
 
         // begin inner product verification

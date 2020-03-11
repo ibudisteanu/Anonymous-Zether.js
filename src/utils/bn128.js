@@ -67,6 +67,8 @@ bn128.representation = (point) => {
     return temp[0] + temp[1].slice(2);
 };
 
+
+
 bn128.B_MAX = B_MAX;
 
 module.exports = bn128;

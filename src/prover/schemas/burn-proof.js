@@ -6,6 +6,7 @@ const InnerProductProof= require('./inner-product-proof');
 
 const slice = utils.slice;
 const G1Point = utils.G1Point;
+const BNFieldfromHex = utils.BNFieldfromHex;
 
 class BurnProof {
 
@@ -62,22 +63,22 @@ class BurnProof {
         this.CRnPrime = G1Point(slice(arr, 192), slice(arr, 224));
 
         this.tCommits = new FieldVector( [G1Point(slice(arr, 256), slice(arr, 288)), G1Point(slice(arr, 320), slice(arr, 352))] );
-        this.tHat = slice(arr, 384);
-        this.tauX = slice(arr, 416);
-        this.mu = slice(arr, 448);
+        this.tHat = BNFieldfromHex( slice(arr, 384) );
+        this.tauX = BNFieldfromHex( slice(arr, 416) );
+        this.mu = BNFieldfromHex( slice(arr, 448) );
 
-        this.c = slice(arr, 480);
-        this.s_sk = slice(arr, 512);
-        this.s_vDiff = slice(arr, 544);
-        this.s_nuDiff = slice(arr, 576);
+        this.c = BNFieldfromHex( slice(arr, 480) );
+        this.s_sk = BNFieldfromHex( slice(arr, 512) );
+        this.s_vDiff = BNFieldfromHex( slice(arr, 544) );
+        this.s_nuDiff = BNFieldfromHex( slice(arr, 576) );
 
         const ipProof = new InnerProductProof('burner');
         for (let i = 0; i < utils.gBurn_n; i++) {
             ipProof.ls[i] = G1Point(slice(arr, 608 + i * 64), slice(arr, 640 + i * 64));
             ipProof.rs[i] = G1Point(slice(arr, 608 + (utils.gBurn_n + i) * 64), slice(arr, 640 + (utils.gBurn_n + i) * 64));
         }
-        ipProof.a = slice(arr, 608 + utils.gBurn_n * 128);
-        ipProof.b = slice(arr, 640 + utils.gBurn_n * 128);
+        ipProof.a = BNFieldfromHex( slice(arr, 608 + utils.gBurn_n * 128) );
+        ipProof.b = BNFieldfromHex( slice(arr, 640 + utils.gBurn_n * 128) );
         this.ipProof = ipProof;
 
     }
