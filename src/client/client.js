@@ -92,7 +92,7 @@ class Client {
                     //sender
                     ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b2, type: "sender"  } );
 
-                    const value = ZSC.readBalance( bn128.unserialize( C[i] ), bn128.unserialize( D ), this.account.keypair.x );
+                    const value = ZSC.readBalance( C[i], D, this.account.keypair.x, true );
                     if (value > 0) {
                         console.log("Transfer of " + value + " sent! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
                         ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "sender"  } );
@@ -104,7 +104,7 @@ class Client {
                     //receiver
                     ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b, type: "receiver"  } );
 
-                    const value = ZSC.readBalance( bn128.unserialize( C[i] ).neg(), bn128.unserialize( D ).neg(), this.account.keypair.x );
+                    const value = ZSC.readBalance( C[i], D, this.account.keypair.x );
                     if (value > 0) {
                         this.account._state.pending += value;
                         console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
@@ -116,8 +116,8 @@ class Client {
 
             }catch(err){
 
-                const value1 = ZSC.readBalance( bn128.unserialize( C[i] ), bn128.unserialize( D ), this.account.keypair.x );
-                const value2 = ZSC.readBalance( bn128.unserialize( C[i].neg() ), bn128.unserialize( D.neg() ), this.account.keypair.x );
+                const value1 = ZSC.readBalance( C[i], D , this.account.keypair.x, true);
+                const value2 = ZSC.readBalance( C[i], D, this.account.keypair.x );
 
                 if (value1 > 0) {
 
@@ -156,9 +156,11 @@ class Client {
 
 
         tx.onProcess = ()=>{
+
             account._state = account._simulate(); // have to freshly call it
             account._state.pending += value;
             console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+            consts.incrementEpoch();
 
         };
 
@@ -250,11 +252,11 @@ class Client {
             throw new Error("Please make sure all parties (including decoys) are registered."); // todo: better error message, i.e., which friend?
 
         const r = bn128.randomScalar();
-        let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(value) : i === index[1] ? new BN(-value + consts.FEE ) : new BN(0)).add(bn128.unserialize(party).mul(r)));
+        let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(-value) : i === index[1] ? new BN(value ) : new BN(0)).add(bn128.unserialize(party).mul(r)));
 
         let D = bn128.curve.g.mul(r);
-        let CLn = unserialized.map((account, i) =>  account[0].add(C[i].neg()));
-        let CRn = unserialized.map((account) => account[1].add(D.neg()));
+        let CLn = unserialized.map((account, i) =>  account[0].add( C[i] ));
+        let CRn = unserialized.map((account) => account[1].add( D ));
 
         CLn = CLn.map(bn128.serialize);
         CRn = CRn.map(bn128.serialize);
@@ -295,10 +297,10 @@ class Client {
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
-            const proof2 = ZSC.proveAmountSender(y, index[1], r);
+            // const proof2 = ZSC.proveAmountSender(y, index[1], r);
+            // ZSC.verifyAmountSender(value, index[1], y, C, D, proof2);
 
-            ZSC.verifyAmountSender(value, index[1], y, C, D, proof2);
-
+            consts.incrementEpoch();
         };
 
 
@@ -354,7 +356,7 @@ class Client {
             account._state.pending -= value;
 
             console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
-
+            consts.incrementEpoch();
 
         };
 

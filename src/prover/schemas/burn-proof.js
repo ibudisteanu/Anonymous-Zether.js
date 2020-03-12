@@ -13,16 +13,14 @@ class BurnProof {
     constructor() {
         this.BA = null;
         this.BS = null;
-        this.CLnPrime = null;
-        this.CRnPrime = null;
         this.tCommits = [];
         this.tHat = null;
-        this.tauX = null;
         this.mu = null;
         this.c = null;
         this.s_sk = null;
-        this.s_vDiff = null;
-        this.s_nuDiff = null;
+        this.s_b = null;
+        this.s_tau = null;
+
         this.ipProof = null;
 
     };
@@ -32,20 +30,16 @@ class BurnProof {
         result += bn128.representation(this.BA).slice(2);
         result += bn128.representation(this.BS).slice(2);
 
-        result += bn128.representation(this.CLnPrime).slice(2);
-        result += bn128.representation(this.CRnPrime).slice(2);
-
         this.tCommits.getVector().forEach((commit) => {
             result += bn128.representation(commit).slice(2);
         });
         result += bn128.bytes(this.tHat).slice(2);
-        result += bn128.bytes(this.tauX).slice(2);
         result += bn128.bytes(this.mu).slice(2);
 
         result += bn128.bytes(this.c).slice(2);
         result += bn128.bytes(this.s_sk).slice(2);
-        result += bn128.bytes(this.s_vDiff).slice(2);
-        result += bn128.bytes(this.s_nuDiff).slice(2);
+        result += bn128.bytes(this.s_b).slice(2);
+        result += bn128.bytes(this.s_tau).slice(2);
 
         result += this.ipProof.serialize().slice(2);
 
@@ -59,26 +53,22 @@ class BurnProof {
         this.BA = G1Point(slice(arr, 0), slice(arr, 32));
         this.BS = G1Point(slice(arr, 64), slice(arr, 96));
 
-        this.CLnPrime = G1Point(slice(arr, 128), slice(arr, 160));
-        this.CRnPrime = G1Point(slice(arr, 192), slice(arr, 224));
+        this.tCommits = new FieldVector( [G1Point(slice(arr, 128), slice(arr, 160)), G1Point(slice(arr, 192), slice(arr, 224))] );
+        this.tHat = BNFieldfromHex(slice(arr, 256));
+        this.mu = BNFieldfromHex(slice(arr, 288));
 
-        this.tCommits = new FieldVector( [G1Point(slice(arr, 256), slice(arr, 288)), G1Point(slice(arr, 320), slice(arr, 352))] );
-        this.tHat = BNFieldfromHex( slice(arr, 384) );
-        this.tauX = BNFieldfromHex( slice(arr, 416) );
-        this.mu = BNFieldfromHex( slice(arr, 448) );
-
-        this.c = BNFieldfromHex( slice(arr, 480) );
-        this.s_sk = BNFieldfromHex( slice(arr, 512) );
-        this.s_vDiff = BNFieldfromHex( slice(arr, 544) );
-        this.s_nuDiff = BNFieldfromHex( slice(arr, 576) );
+        this.c = BNFieldfromHex( slice(arr, 320) );
+        this.s_sk = BNFieldfromHex( slice(arr, 352) );
+        this.s_b = BNFieldfromHex( slice(arr, 384) );
+        this.s_tau = BNFieldfromHex( slice(arr, 416) );
 
         const ipProof = new InnerProductProof('burner');
         for (let i = 0; i < utils.gBurn_n; i++) {
-            ipProof.ls[i] = G1Point(slice(arr, 608 + i * 64), slice(arr, 640 + i * 64));
-            ipProof.rs[i] = G1Point(slice(arr, 608 + (utils.gBurn_n + i) * 64), slice(arr, 640 + (utils.gBurn_n + i) * 64));
+            ipProof.ls[i] = G1Point(slice(arr, 448 + i * 64), slice(arr, 480 + i * 64));
+            ipProof.rs[i] = G1Point(slice(arr, 448 + (utils.gBurn_n + i) * 64), slice(arr, 480 + (utils.gBurn_n + i) * 64));
         }
-        ipProof.a = BNFieldfromHex( slice(arr, 608 + utils.gBurn_n * 128) );
-        ipProof.b = BNFieldfromHex( slice(arr, 640 + utils.gBurn_n * 128) );
+        ipProof.a = BNFieldfromHex( slice(arr, 448 + utils.gBurn_n * 128) );
+        ipProof.b = BNFieldfromHex( slice(arr, 480 + utils.gBurn_n * 128) );
         this.ipProof = ipProof;
 
     }

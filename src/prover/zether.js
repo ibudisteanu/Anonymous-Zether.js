@@ -142,9 +142,11 @@ class ZetherProver {
         proof.y_XG = Array.from({ length: m }).map((_, k) => this.params.getG().mul(omega[k]));
         var vPow = new BN(1).toRed(bn128.q);
         for (var i = 0; i < N; i++) { // could turn this into a complicated reduce, but...
-            var temp = this.params.getG().mul(vPow);
+            var temp = this.params.getG().mul(witness['bTransfer'].redMul(vPow));
             var poly = i % 2 ? Q : P; // clunky, i know, etc. etc.
-            proof.C_XG = proof.C_XG.map((C_XG_k, k) => C_XG_k.add(temp.mul(witness['bTransfer'].redMul(poly[k].getVector()[(witness['index'][0] + N - (i - i % 2)) % N]).redAdd(witness['bTransfer'].redNeg().redAdd( consts.FEE_BN ).redMul(poly[k].getVector()[(witness['index'][1] + N - (i - i % 2)) % N])))));
+
+            proof.C_XG = proof.C_XG.map((C_XG_k, k) => C_XG_k.add(temp.mul(poly[k].getVector()[(witness['index'][0] + N - (i - i % 2)) % N].redNeg().redAdd(poly[k].getVector()[(witness['index'][1] + N - (i - i % 2)) % N]))));
+
             if (i != 0)
                 vPow = vPow.redMul(v);
         }
@@ -175,6 +177,50 @@ class ZetherProver {
         proof.z_A = r_B.redMul(w).redAdd(r_A);
         proof.z_C = r_C.redMul(w).redAdd(r_D);
         proof.z_E = r_F.redMul(w).redAdd(r_E);
+
+        var y = utils.hash(ABICoder.encodeParameters([
+            'bytes32',
+        ], [
+            bn128.bytes(w), // that's it?
+        ]));
+
+        var ys = [new BN(1).toRed(bn128.q)];
+        for (var i = 1; i < 64; i++) { // it would be nice to have a nifty functional way of doing this.
+            ys.push(ys[i - 1].redMul(y));
+        }
+        ys = new FieldVector(ys); // could avoid this line by starting ys as a fieldvector and using "plus". not going to bother.
+        var z = utils.hash(bn128.bytes(y));
+        var zs = [z.redPow(new BN(2)), z.redPow(new BN(3))];
+        var twos = [new BN(1).toRed(bn128.q)];
+        for (var i = 1; i < 32; i++) {
+            twos.push(twos[i - 1].redMul(new BN(2).toRed(bn128.q)));
+        }
+        var twoTimesZs = [];
+        for (var i = 0; i < 2; i++) {
+            for (var j = 0; j < 32; j++) {
+                twoTimesZs.push(zs[i].redMul(twos[j]));
+            }
+        }
+        twoTimesZs = new FieldVector(twoTimesZs);
+        var lPoly = new FieldVectorPolynomial(aL.plus(z.redNeg()), sL);
+        var rPoly = new FieldVectorPolynomial(ys.hadamard(aR.plus(z)).add(twoTimesZs), sR.hadamard(ys));
+        var tPolyCoefficients = lPoly.innerProduct(rPoly); // just an array of BN Reds... should be length 3
+        var polyCommitment = new PolyCommitment(this.params, tPolyCoefficients );
+        proof.tCommits = new GeneratorVector(polyCommitment.getCommitments()); // just 2 of them
+
+        var x = utils.hash(ABICoder.encodeParameters([
+            'bytes32',
+            'bytes32[2]',
+            'bytes32[2]',
+        ], [
+            bn128.bytes(z),
+            ...polyCommitment.getCommitments().map(bn128.serialize),
+        ]));
+
+        var evalCommit = polyCommitment.evaluate(x);
+        proof.tHat = evalCommit.getX();
+        var tauX = evalCommit.getR();  // no longer public...
+        proof.mu = alpha.redAdd(rho.redMul(x));
 
         var CRnR = bn128.zero;
         var y_0R = bn128.zero;
@@ -209,94 +255,25 @@ class ZetherProver {
         for (var i = 0; i < N; i++) {
             var y_poly = i % 2 ? y_q : y_p;
             y_XR = y_XR.add(y_poly.getVector()[Math.floor(i / 2)].mul(vPow));
-            if (i != 0)
+            if (i > 0)
                 vPow = vPow.redMul(v);
         }
 
-        var gammaTransfer = bn128.randomScalar();
-        var gammaDiff = bn128.randomScalar();
-        var zetaTransfer = bn128.randomScalar();
-        var zetaDiff = bn128.randomScalar();
-        proof.CPrime = this.params.getH().mul(gammaTransfer.redMul(wPow)).add(y_0R.mul(zetaTransfer));
-        proof.DPrime = gR.mul(zetaTransfer);
-        proof.CLnPrime = this.params.getH().mul(gammaDiff.redMul(wPow)).add(y_0R.mul(zetaDiff));
-        proof.CRnPrime = gR.mul(zetaDiff);
-
-        var y = utils.hash(ABICoder.encodeParameters([
-            'bytes32',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
-        ], [
-            bn128.bytes(w),
-            bn128.serialize(proof.CPrime),
-            bn128.serialize(proof.DPrime),
-            bn128.serialize(proof.CLnPrime),
-            bn128.serialize(proof.CRnPrime),
-        ]));
-
-        var ys = [new BN(1).toRed(bn128.q)];
-        for (var i = 1; i < 64; i++) { // it would be nice to have a nifty functional way of doing this.
-            ys.push(ys[i - 1].redMul(y));
-        }
-        ys = new FieldVector(ys); // could avoid this line by starting ys as a fieldvector and using "plus". not going to bother.
-        var z = utils.hash(bn128.bytes(y));
-        var zs = [z.redPow(new BN(2)), z.redPow(new BN(3))];
-        var twos = [new BN(1).toRed(bn128.q)];
-        for (var i = 1; i < 32; i++) {
-            twos.push(twos[i - 1].redMul(new BN(2).toRed(bn128.q)));
-        }
-        var twoTimesZs = [];
-        for (var i = 0; i < 2; i++) {
-            for (var j = 0; j < 32; j++) {
-                twoTimesZs.push(zs[i].redMul(twos[j]));
-            }
-        }
-        twoTimesZs = new FieldVector(twoTimesZs);
-        var lPoly = new FieldVectorPolynomial(aL.plus(z.redNeg()), sL);
-        var rPoly = new FieldVectorPolynomial(ys.hadamard(aR.plus(z)).add(twoTimesZs), sR.hadamard(ys));
-        var tPolyCoefficients = lPoly.innerProduct(rPoly); // just an array of BN Reds... should be length 3
-        var polyCommitment = new PolyCommitment(this.params, tPolyCoefficients, zs[0].redMul(gammaTransfer).redAdd(zs[1].redMul(gammaDiff)));
-        proof.tCommits = new GeneratorVector(polyCommitment.getCommitments()); // just 2 of them
-
-        var x = utils.hash(ABICoder.encodeParameters([
-            'bytes32',
-            'bytes32[2]',
-            'bytes32[2]',
-        ], [
-            bn128.bytes(z),
-            ...polyCommitment.getCommitments().map(bn128.serialize),
-        ]));
-
-        var evalCommit = polyCommitment.evaluate(x);
-        proof.tHat = evalCommit.getX();
-        proof.tauX = evalCommit.getR();
-        proof.mu = alpha.redAdd(rho.redMul(x));
 
         var k_sk = bn128.randomScalar();
         var k_r = bn128.randomScalar();
-        var k_vTransfer = bn128.randomScalar();
-        var k_vDiff = bn128.randomScalar(); // v "corresponds to" b
-        var k_nuTransfer = bn128.randomScalar();
-        var k_nuDiff = bn128.randomScalar(); // nu "corresponds to" gamma
+        var k_b = bn128.randomScalar();
+        var k_tau = bn128.randomScalar();
 
         var A_y = gR.mul(k_sk);
-        var A_D = this.params.getG().mul(k_r); // gR........ no longer
-        var A_u = utils.gEpoch(statement['epoch']).mul(k_sk);
+        var A_D = this.params.getG().mul(k_r);
+        var A_b = this.params.getG().mul(k_b).add(DR.mul(zs[0].redNeg()).add(CRnR.mul(zs[1])).mul(k_sk));
         var A_X = y_XR.mul(k_r);
-        var A_t = DR.add(proof.DPrime).mul(zs[0]).add(CRnR.add(proof.CRnPrime).mul(zs[1])).mul(k_sk);
-
-        var A_C0 = this.params.getG().mul(k_vTransfer).add(DR.mul(k_sk));
-        var A_CLn = this.params.getG().mul(k_vDiff).add(CRnR.mul(k_sk));
-        var A_CPrime = this.params.getH().mul(k_nuTransfer).add(proof.DPrime.mul(k_sk));
-        var A_CLnPrime = this.params.getH().mul(k_nuDiff).add(proof.CRnPrime.mul(k_sk));
+        var A_t = this.params.getG().mul(k_b.redNeg()).add(this.params.getH().mul(k_tau));
+        var A_u = utils.gEpoch(statement['epoch']).mul(k_sk);
 
         proof.c = utils.hash(ABICoder.encodeParameters([
             'bytes32',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
@@ -307,21 +284,16 @@ class ZetherProver {
             bn128.bytes(x),
             bn128.serialize(A_y),
             bn128.serialize(A_D),
-            bn128.serialize(A_u),
+            bn128.serialize(A_b),
             bn128.serialize(A_X),
             bn128.serialize(A_t),
-            bn128.serialize(A_C0),
-            bn128.serialize(A_CLn),
-            bn128.serialize(A_CPrime),
-            bn128.serialize(A_CLnPrime),
+            bn128.serialize(A_u),
         ]));
 
         proof.s_sk = k_sk.redAdd(proof.c.redMul(witness['sk']));
         proof.s_r = k_r.redAdd(proof.c.redMul(witness['r']));
-        proof.s_vTransfer = k_vTransfer.redAdd(proof.c.redMul(witness['bTransfer'].redMul(wPow)));
-        proof.s_vDiff = k_vDiff.redAdd(proof.c.redMul(witness['bDiff'].redMul(wPow)));
-        proof.s_nuTransfer = k_nuTransfer.redAdd(proof.c.redMul(gammaTransfer.redMul(wPow)));
-        proof.s_nuDiff = k_nuDiff.redAdd(proof.c.redMul(gammaDiff.redMul(wPow)));
+        proof.s_b = k_b.redAdd(proof.c.redMul(witness['bTransfer'].redMul(zs[0]).redAdd(witness['bDiff'].redMul(zs[1])).redMul(wPow)));
+        proof.s_tau = k_tau.redAdd(proof.c.redMul(tauX.redMul(wPow)));
 
         var gs = this.params.getGs();
         var hPrimes = this.params.getHs().hadamard(ys.invert());

@@ -35,23 +35,15 @@ class ZetherProof {
         this.z_C = null;
         this.z_E = null;
 
-        this.CPrime = null;
-        this.DPrime = null;
-        this.CLnPrime = null;
-        this.CRnPrime = null;
-
         this.tCommits = new Array(2);
         this.tHat = null;
-        this.tauX = null;
         this.mu = null;
 
         this.c = null;
         this.s_sk = null;
         this.s_r = null;
-        this.s_vTransfer = null;
-        this.s_vDiff = null;
-        this.s_nuTransfer = null;
-        this.s_nuDiff = null;
+        this.s_b = null;
+        this.s_tau = null;
 
         this.ipProof = new InnerProductProof('verifier');
 
@@ -82,23 +74,17 @@ class ZetherProof {
         result += bn128.bytes(this.z_C).slice(2);
         result += bn128.bytes(this.z_E).slice(2);
 
-        result += bn128.representation(this.CPrime).slice(2);
-        result += bn128.representation(this.DPrime).slice(2);
-        result += bn128.representation(this.CLnPrime).slice(2);
-        result += bn128.representation(this.CRnPrime).slice(2);
-
-        this.tCommits.getVector().map((commit) => result += bn128.representation(commit).slice(2) );
+        this.tCommits.getVector().forEach((commit) => {
+            result += bn128.representation(commit).slice(2);
+        });
         result += bn128.bytes(this.tHat).slice(2);
-        result += bn128.bytes(this.tauX).slice(2);
         result += bn128.bytes(this.mu).slice(2);
 
         result += bn128.bytes(this.c).slice(2);
         result += bn128.bytes(this.s_sk).slice(2);
         result += bn128.bytes(this.s_r).slice(2);
-        result += bn128.bytes(this.s_vTransfer).slice(2);
-        result += bn128.bytes(this.s_vDiff).slice(2);
-        result += bn128.bytes(this.s_nuTransfer).slice(2);
-        result += bn128.bytes(this.s_nuDiff).slice(2);
+        result += bn128.bytes(this.s_b).slice(2);
+        result += bn128.bytes(this.s_tau).slice(2);
 
         result += this.ipProof.serialize().slice(2);
 
@@ -120,7 +106,7 @@ class ZetherProof {
         this.E = G1Point( slice(arr, 384), slice(arr, 416));
         this.F = G1Point( slice(arr, 448), slice(arr, 480));
 
-        const m = Math.floor( (arr.length - 2144) / 576 );
+        const m = Math.floor( (arr.length - 1792) / 576 );
         this.CLnG = new Array(m);
         this.CRnG = new Array(m);
         this.C_0G = new Array(m);
@@ -149,31 +135,23 @@ class ZetherProof {
         this.z_C = BNFieldfromHex( slice(arr, 544 + starting) );
         this.z_E = BNFieldfromHex( slice(arr, 576 + starting) );
 
-        this.CPrime = G1Point(slice(arr, 608 + starting), slice(arr, 640 + starting));
-        this.DPrime = G1Point(slice(arr, 672 + starting), slice(arr, 704 + starting));
-        this.CLnPrime = G1Point(slice(arr, 736 + starting), slice(arr, 768 + starting));
-        this.CRnPrime = G1Point(slice(arr, 800 + starting), slice(arr, 832 + starting));
+        this.tCommits = [ utils.G1Point( utils.slice(arr, 608 + starting), utils.slice(arr, 640 + starting)), utils.G1Point( utils.slice(arr, 672 + starting), utils.slice(arr, 704 + starting))];
+        this.tHat = BNFieldfromHex( utils.slice(arr, 736 + starting) );
+        this.mu = BNFieldfromHex( utils.slice(arr, 768 + starting) );
 
-        this.tCommits = [G1Point(slice(arr, 864 + starting), slice(arr, 896 + starting)), G1Point(slice(arr, 928 + starting), slice(arr, 960 + starting))];
-        this.tHat = BNFieldfromHex( slice(arr, 992 + starting) );
-        this.tauX = BNFieldfromHex( slice(arr, 1024 + starting) );
-        this.mu = BNFieldfromHex( slice(arr, 1056 + starting) );
-
-        this.c = BNFieldfromHex( slice(arr, 1088 + starting) );
-        this.s_sk = BNFieldfromHex( slice(arr, 1120 + starting) );
-        this.s_r = BNFieldfromHex( slice(arr, 1152 + starting) );
-        this.s_vTransfer = BNFieldfromHex( slice(arr, 1184 + starting) );
-        this.s_vDiff = BNFieldfromHex( slice(arr, 1216 + starting) );
-        this.s_nuTransfer = BNFieldfromHex( slice(arr, 1248 + starting) );
-        this.s_nuDiff = BNFieldfromHex( slice(arr, 1280 + starting));
-
+        this.c = BNFieldfromHex( slice(arr, 800 + starting) );
+        this.s_sk = BNFieldfromHex( slice(arr, 832 + starting) );
+        this.s_r = BNFieldfromHex( slice(arr, 864 + starting) );
+        this.s_b = BNFieldfromHex( slice(arr, 896 + starting) );
+        this.s_tau = BNFieldfromHex( slice(arr, 928 + starting) );
 
         for (let i=0 ; i < utils.g_n; i++) {
-            this.ipProof.ls[i] = G1Point(slice(arr, 1312 + starting + i * 64), slice(arr, 1344 + starting + i * 64));
-            this.ipProof.rs[i] = G1Point(slice(arr, 1312 + starting + ( utils.g_n + i) * 64), slice(arr, 1344 + starting + (utils.g_n + i) * 64));
+            this.ipProof.ls[i] = G1Point(slice(arr, 960 + starting + i * 64), slice(arr, 992 + starting + i * 64));
+            this.ipProof.rs[i] = G1Point(slice(arr, 960 + starting + ( utils.g_n + i) * 64), slice(arr, 992 + starting + (utils.g_n + i) * 64));
         }
-        this.ipProof.a = BNFieldfromHex( slice(arr, 1312 + starting + utils.g_n * 128) );
-        this.ipProof.b = BNFieldfromHex( slice(arr, 1344 + starting + utils.g_n * 128) );
+
+        this.ipProof.a = BNFieldfromHex( slice(arr, 960 + starting + utils.g_n * 128) );
+        this.ipProof.b = BNFieldfromHex( slice(arr, 992 + starting + utils.g_n * 128) );
 
     }
 
@@ -196,24 +174,14 @@ class ZetherProof {
             DG: this.DG.map(it => it.toJSON() ),
             gG: this.gG.map(it => it.toJSON() ),
             f: this.f.map(it => utils.fixHexString( it ) ),
-            z_P: utils.fixHexString( this.z_P ),
-            z_U: utils.fixHexString( this.z_U ),
-            z_X: utils.fixHexString( this.z_X ),
-            CPrime: this.CPrime.toJSON(),
-            DPrime: this.DPrime.toJSON(),
-            CLnPrime: this.CLnPrime.toJSON(),
-            CRnPrime: this.CRnPrime.toJSON(),
             tCommits: this.tCommits.map(it => it.toJSON() ),
             tHat: utils.fixHexString( this.tHat ),
-            tauX: utils.fixHexString( this.tauX ),
             mu: utils.fixHexString( this.mu ),
             c: utils.fixHexString( this.c  ),
             s_sk: utils.fixHexString( this.s_sk ),
             s_r: utils.fixHexString( this.s_r ),
-            s_vTransfer: utils.fixHexString( this.s_vTransfer ),
-            s_vDiff: utils.fixHexString( this.s_vDiff ),
-            s_nuTransfer: utils.fixHexString( this.s_nuTransfer ),
-            s_nuDiff: utils.fixHexString( this.s_nuDiff ),
+            s_b: utils.fixHexString( this.s_b ),
+            s_tau: utils.fixHexString( this.s_tau ),
             ipProof: this.ipProof.toJSON(),
 
         }

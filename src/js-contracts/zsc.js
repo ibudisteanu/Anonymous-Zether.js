@@ -184,10 +184,10 @@ class ZSC{
 
                 const scratch = this._getPending(yHash );
                 accounts[i][0] = accounts[i][0].add( scratch[0] );
-                if ( !accounts[i][0].validate() ) throw "Error PointSum1";
-
                 accounts[i][1] = accounts[i][1].add( scratch[1] );
-                if ( !accounts[i][1].validate() ) throw "Error PointSum1";
+
+                if ( !accounts[i][0].validate() ) throw "Error PointSum1";
+                if ( !accounts[i][1].validate() ) throw "Error PointSum2";
 
             }
 
@@ -220,14 +220,14 @@ class ZSC{
 
             let scratch = this._getPending(yHash);
             const pending = [];
-            pending[0] = scratch[0].add( C[i].neg() );
-            pending[1] = scratch[1].add( D.neg() );
+            pending[0] = scratch[0].add( C[i] );
+            pending[1] = scratch[1].add( D );
 
             this._setPending( yHash, pending ); // credit / debit / neither y's account.
 
             scratch = this._getAccMap(yHash);
-            CLn[i] = scratch[0].add( C[i].neg() );
-            CRn[i] = scratch[1].add( D.neg() );
+            CLn[i] = scratch[0].add( C[i] );
+            CRn[i] = scratch[1].add( D );
 
         }
 
@@ -235,13 +235,13 @@ class ZSC{
          * MINER FEE
          */
 
-        this._rollOver({block}, consts.MINER_HASH);
-        const scratch = this._getPending( consts.MINER_HASH );
-
-        const out1 = utils.g().mul( consts.FEE_BN );
-
-        scratch[0] = scratch[0].add( out1 );
-        this._setPending( consts.MINER_HASH, scratch );
+        // this._rollOver({block}, consts.MINER_HASH);
+        // const scratch = this._getPending( consts.MINER_HASH );
+        //
+        // const out1 = utils.g().mul( consts.FEE_BN );
+        //
+        // scratch[0] = scratch[0].add( out1 );
+        // this._setPending( consts.MINER_HASH, scratch );
 
         const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
 
@@ -256,7 +256,7 @@ class ZSC{
 
     _rollOver({block}, yHash ){
 
-        let e = Math.floor( block.timestamp / consts.BLOCK_TIME_OUT / consts.EPOCH_LENGTH);
+        let e = consts.getEpoch();
         console.log("rollOver epoch", e);
 
         if (this._getLastRollOver(yHash) < e) {
@@ -291,8 +291,7 @@ class ZSC{
 
         this._rollOver({block}, yHash);
 
-        if ( 0 > bTransfer || bTransfer > MAX) throw "Transfer amount out of range";
-
+        if ( bTransfer < 0 || bTransfer > MAX) throw "Transfer amount out of range";
 
         let pending = this._getPending(yHash); // could technically use sload, but... let's not go there.
         pending[0] = pending[0].add( utils.g().mul( new BN(bTransfer).toRed(bn128.q).neg()) );
@@ -316,7 +315,15 @@ class ZSC{
 
     // no "start" parameter for now.
     // CL and CR are "flat", x is a BN.
-    readBalance (CL, CR, x) {
+    readBalance (CL, CR, x, negate = false) {
+
+        CL = bn128.unserialize(CL);
+        CR = bn128.unserialize(CR);
+
+        if (negate){
+            CL = CL.neg();
+            CR = CR.neg();
+        }
 
         const gB = CL.add(CR.mul(x.redNeg()));
 
@@ -335,7 +342,7 @@ class ZSC{
 
         const k = bn128.randomScalar();
 
-        const K = bn128.curve.g.mul(  k );
+        const K = bn128.curve.g.mul( k );
         const Y = bn128.unserialize( y[i] ).mul( k );
 
         const c = utils.hash( bn128.representation(K) + bn128.representation(Y).substr(2) );
@@ -350,7 +357,7 @@ class ZSC{
         const Kr = bn128.curve.g.mul( proof.s ).add(  bn128.unserialize(D).mul( proof.c.neg() ) );
 
         //Y_r
-        const Yr = bn128.unserialize( y[i] ).mul( proof.s ).add(  bn128.curve.g.mul( new BN( b - consts.FEE )).add( bn128.unserialize(C[i])).mul( proof.c.neg() ));
+        const Yr = bn128.unserialize( y[i] ).mul( proof.s ).add(  bn128.curve.g.mul( new BN( b )).add( bn128.unserialize(C[i]) ).mul( proof.c.neg() ));
 
         const hash = utils.hash( bn128.representation(Kr) + bn128.representation(Yr).substr(2) );
 

@@ -9,7 +9,6 @@ const consts = require('./../consts');
 
 const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
-const BNFieldfromHex = utils.BNFieldfromHex;
 
 const ZetherProof = require('./../prover/schemas/zether-proof');
 const ZetherStatement = require('./../prover/schemas/zether-statement');
@@ -143,7 +142,7 @@ class ZVerifier{
 
 
         anonAuxiliaries.temp = G1Point0();
-        for (let k = 0; k < 2 * anonAuxiliaries.m; k++)  // danger... gs and hs need to be big enough.
+        for (let k = 0; k < 2 * anonAuxiliaries.m; k++)
             anonAuxiliaries.temp = anonAuxiliaries.temp.add( (this.params.gs[k].mul( anonAuxiliaries.f[k][1].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[k][1])))) );
 
 
@@ -191,8 +190,6 @@ class ZVerifier{
         }
         anonAuxiliaries.DR = anonAuxiliaries.DR.add( statement.D.mul( anonAuxiliaries.wPow));
         anonAuxiliaries.gR = anonAuxiliaries.gR.add( utils.g().mul( anonAuxiliaries.wPow));
-        anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( utils.g().mul( consts.FEE_BN.neg() ).mul(  anonAuxiliaries.wPow )); // this "subtracts back" the fee, which we added to the recipient's amount, before checking for balance.
-
 
         const zetherAuxiliaries = new ZetherAuxiliaries();
 
@@ -201,16 +198,8 @@ class ZVerifier{
 
         zetherAuxiliaries.y = utils.hash(ABICoder.encodeParameters([
             'bytes32',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
         ], [
             bn128.bytes(anonAuxiliaries.w),
-            bn128.serialize( proof.CPrime ),
-            bn128.serialize( proof.DPrime ),
-            bn128.serialize( proof.CLnPrime ),
-            bn128.serialize( proof.CRnPrime ),
         ]));
 
         zetherAuxiliaries.ys = AdvancedMath.powers(zetherAuxiliaries.y);
@@ -228,7 +217,7 @@ class ZVerifier{
 
                                                                                                                                                                                         //Math.pow safe as g_m/2 is <= 32
         zetherAuxiliaries.k = new FieldVector( zetherAuxiliaries.ys ).sum().redMul(zetherAuxiliaries.z.redSub(zetherAuxiliaries.zs[0])).redSub(zetherAuxiliaries.zSum.redMul(   new BN( Math.pow(2, g_m/2)).toRed(bn128.q)  ).redSub(zetherAuxiliaries.zSum))
-        zetherAuxiliaries.t = proof.tHat.redSub(zetherAuxiliaries.k);
+        zetherAuxiliaries.t = proof.tHat.sub(zetherAuxiliaries.k); // t = tHat - delta(y, z)
 
 
         for (let i = 0; i < g_m / 2; i++) {
@@ -249,27 +238,18 @@ class ZVerifier{
         const sigmaAuxiliaries = new SigmaAuxiliaries();
         sigmaAuxiliaries.A_y = anonAuxiliaries.gR.mul( proof.s_sk ).add( anonAuxiliaries.yR[0][0].mul( proof.c.redNeg() ));
         sigmaAuxiliaries.A_D = utils.g().mul( proof.s_r ).add( statement.D.mul( proof.c  .redNeg()));
+
+
+        sigmaAuxiliaries.A_b = utils.g().mul(proof.s_b).add(anonAuxiliaries.DR.mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CRnR.mul(zetherAuxiliaries.zs[1])).mul(proof.s_sk).add(anonAuxiliaries.CR[0][0].mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CLnR.mul(zetherAuxiliaries.zs[1])).mul(proof.c.neg())));
+        sigmaAuxiliaries.A_X = anonAuxiliaries.y_XR.mul(proof.s_r).add(anonAuxiliaries.C_XR.mul(proof.c.neg()));
+        sigmaAuxiliaries.A_t = utils.g().mul(zetherAuxiliaries.t).add(zetherAuxiliaries.tEval.neg()).mul(proof.c.mul(anonAuxiliaries.wPow)).add(utils.h().mul(proof.s_tau)).add(utils.g().mul(proof.s_b.neg()));
+
+
         sigmaAuxiliaries.gEpoch = utils.gEpoch( statement.epoch ) ;
-
         sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( proof.s_sk ).add( statement.u.mul(  proof.c .redNeg()  ));
-
-
-        sigmaAuxiliaries.A_X = anonAuxiliaries.y_XR.mul( proof.s_r ).add( anonAuxiliaries.C_XR.mul( proof.c .redNeg()  ) ) ;
-
-        sigmaAuxiliaries.c_commit = anonAuxiliaries.DR.add( proof.DPrime ).mul( proof.s_sk ).add( anonAuxiliaries.CR[0][0].add( proof.CPrime).mul( proof.c.redNeg() ) ).mul( zetherAuxiliaries.zs[0] ).add( anonAuxiliaries.CRnR.add( proof.CRnPrime ).mul( proof.s_sk ).add( anonAuxiliaries.CLnR.add( proof.CLnPrime ). mul(  proof.c .redNeg() )).mul( zetherAuxiliaries.zs[1]));
-        sigmaAuxiliaries.A_t = utils.g().mul( zetherAuxiliaries.t ).add(  utils.h().mul( proof.tauX )).add( zetherAuxiliaries.tEval.neg() ).mul( proof.c.redMul(anonAuxiliaries.wPow)).add( sigmaAuxiliaries.c_commit );
-        sigmaAuxiliaries.A_C0 = utils.g().mul(  proof.s_vTransfer ).add( anonAuxiliaries.DR.mul(  proof.s_sk ).add( anonAuxiliaries.CR[0][0].mul( proof.c.redNeg() )));
-        sigmaAuxiliaries.A_CLn = utils.g().mul( proof.s_vDiff ).add( anonAuxiliaries.CRnR.mul( proof.s_sk ).add( anonAuxiliaries.CLnR.mul( proof.c.redNeg())));
-        sigmaAuxiliaries.A_CPrime = utils.h().mul( proof.s_nuTransfer ).add( proof.DPrime.mul( proof.s_sk ).add( proof.CPrime.mul( proof.c.redNeg())) ) ;
-
-        sigmaAuxiliaries.A_CLnPrime = utils.h().mul( proof.s_nuDiff ).add( proof.CRnPrime.mul( proof.s_sk ).add( proof.CLnPrime.mul( proof.c .redNeg())));
-
 
         sigmaAuxiliaries.c = utils.hash(ABICoder.encodeParameters([
             'bytes32',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
@@ -280,13 +260,10 @@ class ZVerifier{
             bn128.bytes(zetherAuxiliaries.x),
             bn128.serialize( sigmaAuxiliaries.A_y ),
             bn128.serialize( sigmaAuxiliaries.A_D ),
-            bn128.serialize( sigmaAuxiliaries.A_u ),
+            bn128.serialize( sigmaAuxiliaries.A_b ),
             bn128.serialize( sigmaAuxiliaries.A_X ),
             bn128.serialize( sigmaAuxiliaries.A_t ),
-            bn128.serialize( sigmaAuxiliaries.A_C0 ),
-            bn128.serialize( sigmaAuxiliaries.A_CLn ),
-            bn128.serialize( sigmaAuxiliaries.A_CPrime ),
-            bn128.serialize( sigmaAuxiliaries.A_CLnPrime ),
+            bn128.serialize( sigmaAuxiliaries.A_u ),
         ]));
 
         this._commonVerifier.verify(proof, sigmaAuxiliaries, zetherAuxiliaries);

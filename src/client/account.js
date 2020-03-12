@@ -55,7 +55,7 @@ class Account {
 
         const simulated = result[0];
 
-        this._state.available = ZSC.readBalance(bn128.unserialize(simulated[0]), bn128.unserialize( simulated[1] ), this.keypair.x );
+        this._state.available = ZSC.readBalance( simulated[0], simulated[1], this.keypair.x );
 
 
     }

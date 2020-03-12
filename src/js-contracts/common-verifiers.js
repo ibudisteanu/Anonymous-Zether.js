@@ -11,7 +11,6 @@ const ABICoder = require('web3-eth-abi');
 
 const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
-const BNFieldfromHex = utils.BNFieldfromHex;
 
 const { FieldVector, GeneratorVector, AdvancedMath } = require('./../prover/algebra.js');
 

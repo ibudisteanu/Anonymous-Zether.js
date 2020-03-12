@@ -5,8 +5,6 @@ const ABICoder = require('web3-eth-abi');
 const { FieldVector, AdvancedMath } = require('./../prover/algebra.js');
 const GeneratorParams = require('./../prover/generator-params');
 
-const BNFieldfromHex = utils.BNFieldfromHex;
-
 const BN = require('bn.js');
 
 const BurnStatement = require('./../prover/schemas/burn-statement');
@@ -76,14 +74,10 @@ class BurnVerifier{
             'bytes32',
             'bytes32[2]',
             'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
         ], [
             bn128.bytes(statementHash),
             bn128.serialize(proof.BA),
             bn128.serialize(proof.BS),
-            bn128.serialize(proof.CLnPrime),
-            bn128.serialize(proof.CRnPrime),
         ]));
         burnAuxiliaries.ys = AdvancedMath.powers(burnAuxiliaries.y, utils.gBurn_m);
         burnAuxiliaries.z = utils.hash(ABICoder.encodeParameters([
@@ -115,15 +109,12 @@ class BurnVerifier{
         burnAuxiliaries.tEval = proof.tCommits.getVector()[0].mul( burnAuxiliaries.x).add( proof.tCommits.getVector()[1].mul( burnAuxiliaries.x.redMul(burnAuxiliaries.x) )); // replace with "commit"?
 
         const sigmaAuxiliaries = new SigmaAuxiliaries();
-        sigmaAuxiliaries.A_y = utils.g().mul( proof.s_sk ).add( statement.y.mul( proof.c.redNeg() ));
+        sigmaAuxiliaries.A_y = utils.g().mul(proof.s_sk ).add( statement.y.mul( proof.c.redNeg() ));
+        sigmaAuxiliaries.A_b = utils.g().mul(proof.s_b).add(statement.CRn.mul(proof.s_sk).add(statement.CLn.mul(proof.c.neg())).mul(burnAuxiliaries.zs[0]));
+        sigmaAuxiliaries.A_t = utils.g().mul(burnAuxiliaries.t).add(burnAuxiliaries.tEval.neg()).mul(proof.c).add(utils.h().mul(proof.s_tau)).add(utils.g().mul(proof.s_b.neg()));
         sigmaAuxiliaries.gEpoch = utils.gEpoch( statement.epoch );
 
-        sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( proof.s_sk ).add( statement.u.mul( proof.c.redNeg()));
-        sigmaAuxiliaries.c_commit = statement.CRn.add( proof.CRnPrime ).mul( proof.s_sk ).add( statement.CLn.add( proof.CLnPrime ).mul( proof.c.redNeg())).mul( burnAuxiliaries.zs[0] );
-
-        sigmaAuxiliaries.A_t = utils.g().mul(  burnAuxiliaries.t ).add( utils.h().mul( proof.tauX ) ).add( burnAuxiliaries.tEval.neg() ).mul( proof.c ).add( sigmaAuxiliaries.c_commit);
-        sigmaAuxiliaries.A_CLn = utils.g().mul( proof.s_vDiff ).add( statement.CRn.mul( proof.s_sk ).add( statement.CLn.mul( proof.c.redNeg())));
-        sigmaAuxiliaries.A_CLnPrime = utils.h().mul( proof.s_nuDiff ).add( proof.CRnPrime.mul( proof.s_sk )).add(  proof.CLnPrime.mul( proof.c.redNeg()));
+        sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( proof.s_sk).add( statement.u.mul( proof.c.redNeg()));
 
         sigmaAuxiliaries.c = utils.hash(ABICoder.encodeParameters([
             'bytes32',
@@ -131,14 +122,12 @@ class BurnVerifier{
             'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
-            'bytes32[2]',
         ], [
             bn128.bytes(burnAuxiliaries.x),
             bn128.serialize(sigmaAuxiliaries.A_y),
-            bn128.serialize(sigmaAuxiliaries.A_u),
+            bn128.serialize(sigmaAuxiliaries.A_b),
             bn128.serialize(sigmaAuxiliaries.A_t),
-            bn128.serialize(sigmaAuxiliaries.A_CLn),
-            bn128.serialize(sigmaAuxiliaries.A_CLnPrime),
+            bn128.serialize(sigmaAuxiliaries.A_u),
         ]));
 
         this._commonVerifier.verify(proof, sigmaAuxiliaries, burnAuxiliaries);
