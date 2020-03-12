@@ -306,7 +306,7 @@ class ZSC{
 
         this._nonceSet[ utils.fromHex( uHash ) ] = true;
 
-        if ( !BurnerVerifier.verifyBurn( scratch[0], scratch[1], y, bTransfer, this.lastGlobalUpdate, u, sender, proof) ) throw "Burn proof verification failed!";
+        if ( !BurnerVerifier.verifyBurn( scratch[0], scratch[1], y,  this.lastGlobalUpdate, u, sender, proof) ) throw "Burn proof verification failed!";
 
         //require(coin.transfer(msg.sender, bTransfer), "This shouldn't fail... Something went severely wrong.");
 

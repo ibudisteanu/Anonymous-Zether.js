@@ -27,7 +27,7 @@ class BurnVerifier{
 
     }
 
-    verifyBurn(CLn, CRn, y, bTransfer, epoch, u, sender, proof){
+    verifyBurn(CLn, CRn, y, epoch, u, sender, proof){
 
 
         const statement = new BurnStatement(); // WARNING: if this is called directly in the console,
@@ -38,7 +38,6 @@ class BurnVerifier{
         statement.CLn = CLn;
         statement.CRn = CRn;
         statement.y = y;
-        statement.bTransfer = bTransfer;
         statement.epoch = epoch;
         statement.u = u;
         statement.sender = sender;
@@ -58,13 +57,11 @@ class BurnVerifier{
             'bytes32[2]',
             'bytes32[2]',
             'uint256',
-            'uint256',
             'address',
         ], [
             bn128.serialize(statement.CLn  ),
             bn128.serialize(statement.CRn  ),
             bn128.serialize(statement.y  ),
-            statement.bTransfer,
             statement.epoch,
             statement.sender,
         ])); // stacktoodeep?

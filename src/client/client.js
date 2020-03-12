@@ -338,7 +338,7 @@ class Client {
         const simulated = result[0];
         const CLn = bn128.serialize( simulated[0].add(bn128.curve.g.mul(new BN(-value))));
         const CRn = bn128.serialize( simulated[1]);
-        const proof = this.service.proveBurn(CLn, CRn, account.keypair.y, value, state.lastRollOver, this._home, account.keypair.x, state.available - value);
+        const proof = this.service.proveBurn(CLn, CRn, account.keypair.y, state.lastRollOver, this._home, account.keypair.x, state.available - value);
         const u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
         const tx = Blockchain.createTransaction();
