@@ -202,8 +202,12 @@ class ZVerifier{
             bn128.bytes(anonAuxiliaries.w),
         ]));
 
-        zetherAuxiliaries.ys = AdvancedMath.powers(zetherAuxiliaries.y);
-
+        zetherAuxiliaries.ys[0] = new BN(1).toRed(bn128.q);
+        zetherAuxiliaries.k = new BN(1).toRed(bn128.q);
+        for (let i = 1; i < 64; i++) {
+            zetherAuxiliaries.ys[i] = zetherAuxiliaries.ys[i - 1].redMul(zetherAuxiliaries.y);
+            zetherAuxiliaries.k = zetherAuxiliaries.k.redAdd(zetherAuxiliaries.ys[i]);
+        }
 
         zetherAuxiliaries.z = utils.hash(ABICoder.encodeParameters([
             `bytes32`,
@@ -215,14 +219,14 @@ class ZVerifier{
         zetherAuxiliaries.zs = [ zetherAuxiliaries.z.redPow( new BN(2) ), zetherAuxiliaries.z.redPow( new BN(3) ) ];
         zetherAuxiliaries.zSum = zetherAuxiliaries.zs[0].redAdd(zetherAuxiliaries.zs[1]).redMul(zetherAuxiliaries.z);
 
-                                                                                                                                                                                        //Math.pow safe as g_m/2 is <= 32
-        zetherAuxiliaries.k = new FieldVector( zetherAuxiliaries.ys ).sum().redMul(zetherAuxiliaries.z.redSub(zetherAuxiliaries.zs[0])).redSub(zetherAuxiliaries.zSum.redMul(   new BN( Math.pow(2, g_m/2)).toRed(bn128.q)  ).redSub(zetherAuxiliaries.zSum))
+
+        zetherAuxiliaries.k = zetherAuxiliaries.k.redMul(zetherAuxiliaries.z.redSub(zetherAuxiliaries.zs[0])).redSub(zetherAuxiliaries.zSum.redMul(   new BN( Math.pow(2, 32)).toRed(bn128.q)  ).redSub(zetherAuxiliaries.zSum));
         zetherAuxiliaries.t = proof.tHat.sub(zetherAuxiliaries.k); // t = tHat - delta(y, z)
 
 
-        for (let i = 0; i < g_m / 2; i++) {
+        for (let i = 0; i < 32; i++) {
             zetherAuxiliaries.twoTimesZSquared[i] = zetherAuxiliaries.zs[0].redMul(  new BN( Math.pow(2, i) ).toRed(bn128.q)  );    //safe, i <= 32
-            zetherAuxiliaries.twoTimesZSquared[i + g_m / 2] = zetherAuxiliaries.zs[1].redMul( new BN( Math.pow(2, i  )).toRed(bn128.q) );  //safe, i <= 2
+            zetherAuxiliaries.twoTimesZSquared[i + 32] = zetherAuxiliaries.zs[1].redMul( new BN( Math.pow(2, i  )).toRed(bn128.q) );  //safe, i <= 2
         }
 
         zetherAuxiliaries.x = utils.hash(ABICoder.encodeParameters([
@@ -237,7 +241,7 @@ class ZVerifier{
 
         const sigmaAuxiliaries = new SigmaAuxiliaries();
         sigmaAuxiliaries.A_y = anonAuxiliaries.gR.mul( proof.s_sk ).add( anonAuxiliaries.yR[0][0].mul( proof.c.redNeg() ));
-        sigmaAuxiliaries.A_D = utils.g().mul( proof.s_r ).add( statement.D.mul( proof.c  .redNeg()));
+        sigmaAuxiliaries.A_D = utils.g().mul( proof.s_r ).add( statement.D.mul( proof.c.redNeg()));
 
 
         sigmaAuxiliaries.A_b = utils.g().mul(proof.s_b).add(anonAuxiliaries.DR.mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CRnR.mul(zetherAuxiliaries.zs[1])).mul(proof.s_sk).add(anonAuxiliaries.CR[0][0].mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CLnR.mul(zetherAuxiliaries.zs[1])).mul(proof.c.neg())));
@@ -345,9 +349,6 @@ class ZVerifier{
 
             let inverse_fft = new Array(half);
             let compensation = new BN(2).toRed( bn128.q );
-
-            if (!compensation.red)
-                compensation = compensation.toRed( bn128.q );
 
             compensation = compensation.redInvm();
 

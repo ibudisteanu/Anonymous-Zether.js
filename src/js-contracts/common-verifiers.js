@@ -12,7 +12,7 @@ const ABICoder = require('web3-eth-abi');
 const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
 
-const { FieldVector, GeneratorVector, AdvancedMath } = require('./../prover/algebra.js');
+const { FieldVector, GeneratorVector } = require('./../prover/algebra.js');
 
 class CommonVerifiers{
 
@@ -22,6 +22,19 @@ class CommonVerifiers{
         this._n = n;
         this._m = m;
         this._type = type;
+    }
+
+    gSumBurn(){
+        return G1Point('0x00715f13ea08d6b51bedcde3599d8e12163e090921309d5aafc9b5bfaadbcda0', '0x27aceab598af7bf3d16ca9d40fe186c489382c21bb9d22b19cb3af8b751b959f');
+    }
+
+    gSumVerify(){
+        return G1Point('0x2257118d30fe5064dda298b2fac15cf96fd51f0e7e3df342d0aed40b8d7bb151', '0x0d4250e7509c99370e6b15ebfe4f1aa5e65a691133357901aa4b0641f96c80a8');
+    }
+
+    gSum(){
+        if (this._type === 'burner') return this.gSumBurn();
+        if (this._type === 'verifier') return this.gSumVerify();
     }
 
     //IDENTICAL
@@ -36,6 +49,7 @@ class CommonVerifiers{
             bn128.bytes(sigmaAuxiliaries.c),
         ]));
         ipAuxiliaries.u_x = utils.g().mul( ipAuxiliaries.o );
+
         ipAuxiliaries.hPrimes = this.params.hs.map( (it, index) => it.mul( auxiliaries.ys[index].redInvm()  ) ); //hadamardInv
         ipAuxiliaries.hExp = new FieldVector(auxiliaries.ys).times(  auxiliaries.z ).add( new FieldVector( auxiliaries.twoTimesZSquared ) ).getVector();
 
@@ -45,7 +59,7 @@ class CommonVerifiers{
         ipAuxiliaries.P = ipAuxiliaries.P.add( ipAuxiliaries.u_x.mul( proof.tHat ));
 
         // begin inner product verification
-        const ipProof = new InnerProductProof('burner');
+        const ipProof = new InnerProductProof( this._type );
         ipProof.fromObject( proof.ipProof );
 
         for (let i = 0; i < this._n; i++) {
@@ -55,7 +69,7 @@ class CommonVerifiers{
                 'bytes32[2]',
                 'bytes32[2]',
             ], [
-                bn128.bytes(ipAuxiliaries.o.toString(16)),
+                bn128.bytes(ipAuxiliaries.o),
                 bn128.serialize(ipProof.ls[i]),
                 bn128.serialize(ipProof.rs[i]),
             ]));

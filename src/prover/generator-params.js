@@ -64,20 +64,22 @@ class GeneratorParams{
             });
         }
         return result;
-    };
+    }
+
+
 
     getG () {
         return this.g;
-    };
+    }
     getH () {
         return this.h;
-    };
+    }
     getGs () {
         return this.gsVector;
-    };
+    }
     getHs () {
         return this.hsVector;
-    };
+    }
 }
 
 module.exports = GeneratorParams;
