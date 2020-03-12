@@ -97,7 +97,7 @@ class BurnVerifier{
         burnAuxiliaries.zSum = burnAuxiliaries.zs[0].redMul(burnAuxiliaries.z); // trivial sum
 
         burnAuxiliaries.k = new FieldVector( burnAuxiliaries.ys ).sum().redMul(burnAuxiliaries.z.redSub(burnAuxiliaries.zs[0])).redSub(burnAuxiliaries.zSum.redMul( new BN( Math.pow(2, utils.gBurn_m) ).toRed(bn128.q) ).redSub(burnAuxiliaries.zSum));
-        burnAuxiliaries.t = BNFieldfromHex( proof.tHat ).redSub(burnAuxiliaries.k);
+        burnAuxiliaries.t = proof.tHat.redSub(burnAuxiliaries.k);
         for (let i = 0; i < utils.gBurn_m; i++) {
             burnAuxiliaries.twoTimesZSquared[i] = burnAuxiliaries.zs[0].redMul( new BN( Math.pow(2, i) ).toRed(bn128.q) );
         }
@@ -115,15 +115,15 @@ class BurnVerifier{
         burnAuxiliaries.tEval = proof.tCommits.getVector()[0].mul( burnAuxiliaries.x).add( proof.tCommits.getVector()[1].mul( burnAuxiliaries.x.redMul(burnAuxiliaries.x) )); // replace with "commit"?
 
         const sigmaAuxiliaries = new SigmaAuxiliaries();
-        sigmaAuxiliaries.A_y = utils.g().mul( BNFieldfromHex(proof.s_sk) ).add( statement.y.mul( BNFieldfromHex(proof.c).redNeg() ));
+        sigmaAuxiliaries.A_y = utils.g().mul( proof.s_sk ).add( statement.y.mul( proof.c.redNeg() ));
         sigmaAuxiliaries.gEpoch = utils.gEpoch( statement.epoch );
 
-        sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( BNFieldfromHex(proof.s_sk)).add( statement.u.mul( BNFieldfromHex(proof.c).redNeg()));
-        sigmaAuxiliaries.c_commit = statement.CRn.add( proof.CRnPrime ).mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.add( proof.CLnPrime ).mul( BNFieldfromHex(proof.c).redNeg())).mul( burnAuxiliaries.zs[0] );
+        sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( proof.s_sk ).add( statement.u.mul( proof.c.redNeg()));
+        sigmaAuxiliaries.c_commit = statement.CRn.add( proof.CRnPrime ).mul( proof.s_sk ).add( statement.CLn.add( proof.CLnPrime ).mul( proof.c.redNeg())).mul( burnAuxiliaries.zs[0] );
 
-        sigmaAuxiliaries.A_t = utils.g().mul(  burnAuxiliaries.t ).add( utils.h().mul( BNFieldfromHex(proof.tauX) ) ).add( burnAuxiliaries.tEval.neg() ).mul( BNFieldfromHex(proof.c) ).add( sigmaAuxiliaries.c_commit);
-        sigmaAuxiliaries.A_CLn = utils.g().mul( BNFieldfromHex(proof.s_vDiff) ).add( statement.CRn.mul( BNFieldfromHex(proof.s_sk) ).add( statement.CLn.mul( BNFieldfromHex(proof.c).redNeg())));
-        sigmaAuxiliaries.A_CLnPrime = utils.h().mul( BNFieldfromHex(proof.s_nuDiff) ).add( proof.CRnPrime.mul( BNFieldfromHex(proof.s_sk) )).add(  proof.CLnPrime.mul( BNFieldfromHex(proof.c).redNeg()));
+        sigmaAuxiliaries.A_t = utils.g().mul(  burnAuxiliaries.t ).add( utils.h().mul( proof.tauX ) ).add( burnAuxiliaries.tEval.neg() ).mul( proof.c ).add( sigmaAuxiliaries.c_commit);
+        sigmaAuxiliaries.A_CLn = utils.g().mul( proof.s_vDiff ).add( statement.CRn.mul( proof.s_sk ).add( statement.CLn.mul( proof.c.redNeg())));
+        sigmaAuxiliaries.A_CLnPrime = utils.h().mul( proof.s_nuDiff ).add( proof.CRnPrime.mul( proof.s_sk )).add(  proof.CLnPrime.mul( proof.c.redNeg()));
 
         sigmaAuxiliaries.c = utils.hash(ABICoder.encodeParameters([
             'bytes32',

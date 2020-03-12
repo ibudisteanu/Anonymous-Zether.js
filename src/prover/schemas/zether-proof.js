@@ -5,6 +5,7 @@ const InnerProductProof= require('./inner-product-proof');
 
 const slice = utils.slice;
 const G1Point = utils.G1Point;
+const BNFieldfromHex = utils.BNFieldfromHex;
 
 class ZetherProof {
 
@@ -139,14 +140,14 @@ class ZetherProof {
             this.gG[k] = G1Point(slice(arr, 512 + m * 320 + k * 64), slice(arr, 544 + m * 320 + k * 64));
             this.C_XG[k] = G1Point(slice(arr, 512 + m * 384 + k * 64), slice(arr, 544 + m * 384 + k * 64));
             this.y_XG[k] = G1Point(slice(arr, 512 + m * 448 + k * 64), slice(arr, 544 + m * 448 + k * 64));
-            this.f[k] = slice(arr, 512 + m * 512 + k * 32);
-            this.f[k + m] = slice(arr, 512 + m * 544 + k * 32);
+            this.f[k] =  BNFieldfromHex( slice(arr, 512 + m * 512 + k * 32) );
+            this.f[k + m] = BNFieldfromHex( slice(arr, 512 + m * 544 + k * 32) );
         }
 
         const starting = m * 576;
-        this.z_A = slice(arr, 512 + starting);
-        this.z_C = slice(arr, 544 + starting);
-        this.z_E = slice(arr, 576 + starting);
+        this.z_A = BNFieldfromHex( slice(arr, 512 + starting) );
+        this.z_C = BNFieldfromHex( slice(arr, 544 + starting) );
+        this.z_E = BNFieldfromHex( slice(arr, 576 + starting) );
 
         this.CPrime = G1Point(slice(arr, 608 + starting), slice(arr, 640 + starting));
         this.DPrime = G1Point(slice(arr, 672 + starting), slice(arr, 704 + starting));
@@ -154,25 +155,25 @@ class ZetherProof {
         this.CRnPrime = G1Point(slice(arr, 800 + starting), slice(arr, 832 + starting));
 
         this.tCommits = [G1Point(slice(arr, 864 + starting), slice(arr, 896 + starting)), G1Point(slice(arr, 928 + starting), slice(arr, 960 + starting))];
-        this.tHat = slice(arr, 992 + starting);
-        this.tauX = slice(arr, 1024 + starting);
-        this.mu = slice(arr, 1056 + starting);
+        this.tHat = BNFieldfromHex( slice(arr, 992 + starting) );
+        this.tauX = BNFieldfromHex( slice(arr, 1024 + starting) );
+        this.mu = BNFieldfromHex( slice(arr, 1056 + starting) );
 
-        this.c = slice(arr, 1088 + starting);
-        this.s_sk = slice(arr, 1120 + starting);
-        this.s_r = slice(arr, 1152 + starting);
-        this.s_vTransfer = slice(arr, 1184 + starting);
-        this.s_vDiff = slice(arr, 1216 + starting);
-        this.s_nuTransfer = slice(arr, 1248 + starting);
-        this.s_nuDiff = slice(arr, 1280 + starting);
+        this.c = BNFieldfromHex( slice(arr, 1088 + starting) );
+        this.s_sk = BNFieldfromHex( slice(arr, 1120 + starting) );
+        this.s_r = BNFieldfromHex( slice(arr, 1152 + starting) );
+        this.s_vTransfer = BNFieldfromHex( slice(arr, 1184 + starting) );
+        this.s_vDiff = BNFieldfromHex( slice(arr, 1216 + starting) );
+        this.s_nuTransfer = BNFieldfromHex( slice(arr, 1248 + starting) );
+        this.s_nuDiff = BNFieldfromHex( slice(arr, 1280 + starting));
 
 
         for (let i=0 ; i < utils.g_n; i++) {
             this.ipProof.ls[i] = G1Point(slice(arr, 1312 + starting + i * 64), slice(arr, 1344 + starting + i * 64));
             this.ipProof.rs[i] = G1Point(slice(arr, 1312 + starting + ( utils.g_n + i) * 64), slice(arr, 1344 + starting + (utils.g_n + i) * 64));
         }
-        this.ipProof.a = slice(arr, 1312 + starting + utils.g_n * 128);
-        this.ipProof.b = slice(arr, 1344 + starting + utils.g_n * 128);
+        this.ipProof.a = BNFieldfromHex( slice(arr, 1312 + starting + utils.g_n * 128) );
+        this.ipProof.b = BNFieldfromHex( slice(arr, 1344 + starting + utils.g_n * 128) );
 
     }
 

@@ -41,21 +41,14 @@ class ZVerifier{
     verifyTransfer(CLn, CRn, C, D, y, epoch, u, proof){
 
         const statement = new ZetherStatement();
-        const size = y.length;
+        statement.CLn = CLn; // do i need to allocate / set size?!
+        statement.CRn = CRn;
+        statement.C = C;
+        statement.D = D;
+        statement.y = y;
 
-        statement.initializeBySize(size);
-
-        for (let i=0; i< size; i++){
-
-            statement.CLn[i] = G1Point(  CLn[i][0], CLn[i][1]);
-            statement.CRn[i] = G1Point(  CRn[i][0], CRn[i][1] );
-            statement.C[i] = G1Point(C[i][0], C[i][1] );
-            statement.y[i] = G1Point(  y[i][0] , y[i][1] );
-
-        }
-        statement.D = G1Point( D[0], D[1]  );
         statement.epoch = epoch;
-        statement.u = G1Point( u[0], u[1]  );
+        statement.u = u;
 
         const zetherProof = new ZetherProof();
         zetherProof.unserialize(proof);
@@ -135,8 +128,8 @@ class ZVerifier{
 
         for (let k=0; k < 2 * anonAuxiliaries.m; k++) {
             anonAuxiliaries.f[k] = new Array(2);
-            anonAuxiliaries.f[k][1] = BNFieldfromHex( proof.f[k] );
-            anonAuxiliaries.f[k][0] = anonAuxiliaries.w.redSub(  BNFieldfromHex(proof.f[k]) );
+            anonAuxiliaries.f[k][1] = proof.f[k];
+            anonAuxiliaries.f[k][0] = anonAuxiliaries.w.redSub(  proof.f[k] );
         }
 
 
@@ -146,8 +139,7 @@ class ZVerifier{
         for (let k=0; k < 2 * anonAuxiliaries.m; k++)
             anonAuxiliaries.temp = anonAuxiliaries.temp.add(  this.params.gs[k].mul( anonAuxiliaries.f[k][1]) ) ;
 
-
-        if (proof.B.mul(anonAuxiliaries.w).add(proof.A).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_A)) ) ) === false) throw "Recovery failure for B^w * A.";
+        if (proof.B.mul(anonAuxiliaries.w).add(proof.A).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_A ) ) ) === false) throw "Recovery failure for B^w * A.";
 
 
         anonAuxiliaries.temp = G1Point0();
@@ -155,11 +147,11 @@ class ZVerifier{
             anonAuxiliaries.temp = anonAuxiliaries.temp.add( (this.params.gs[k].mul( anonAuxiliaries.f[k][1].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[k][1])))) );
 
 
-        if ( proof.C.mul(anonAuxiliaries.w).add(proof.D).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_C) ) ) )  === false ) throw "Recovery failure for C^w * D.";
+        if ( proof.C.mul(anonAuxiliaries.w).add(proof.D).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_C ) ) )  === false ) throw "Recovery failure for C^w * D.";
 
         anonAuxiliaries.temp = this.params.gs[0].mul( anonAuxiliaries.f[0][1].redMul(anonAuxiliaries.f[anonAuxiliaries.m][1])).add( this.params.gs[1].mul( anonAuxiliaries.f[0][0].redMul(anonAuxiliaries.f[anonAuxiliaries.m][0])));
 
-        if ( proof.F.mul( anonAuxiliaries.w ).add( proof.E ).eq( anonAuxiliaries.temp.add( this.params.h.mul(  BNFieldfromHex( proof.z_E ) )  ) ) === false ) throw "Recovery failure for F^w * E";
+        if ( proof.F.mul( anonAuxiliaries.w ).add( proof.E ).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_E )  ) ) === false ) throw "Recovery failure for F^w * E";
 
         anonAuxiliaries.r = this.assemblePolynomials(anonAuxiliaries.f);
 
@@ -198,8 +190,8 @@ class ZVerifier{
             anonAuxiliaries.wPow = anonAuxiliaries.wPow.redMul(anonAuxiliaries.w);
         }
         anonAuxiliaries.DR = anonAuxiliaries.DR.add( statement.D.mul( anonAuxiliaries.wPow));
-        anonAuxiliaries.gR = anonAuxiliaries.gR.add( this.params.g.mul( anonAuxiliaries.wPow));
-        anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( this.params.g.mul( consts.FEE_BN.neg() ).mul(  anonAuxiliaries.wPow )); // this "subtracts back" the fee, which we added to the recipient's amount, before checking for balance.
+        anonAuxiliaries.gR = anonAuxiliaries.gR.add( utils.g().mul( anonAuxiliaries.wPow));
+        anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add( utils.g().mul( consts.FEE_BN.neg() ).mul(  anonAuxiliaries.wPow )); // this "subtracts back" the fee, which we added to the recipient's amount, before checking for balance.
 
 
         const zetherAuxiliaries = new ZetherAuxiliaries();
@@ -236,7 +228,7 @@ class ZVerifier{
 
                                                                                                                                                                                         //Math.pow safe as g_m/2 is <= 32
         zetherAuxiliaries.k = new FieldVector( zetherAuxiliaries.ys ).sum().redMul(zetherAuxiliaries.z.redSub(zetherAuxiliaries.zs[0])).redSub(zetherAuxiliaries.zSum.redMul(   new BN( Math.pow(2, g_m/2)).toRed(bn128.q)  ).redSub(zetherAuxiliaries.zSum))
-        zetherAuxiliaries.t = BNFieldfromHex(proof.tHat).redSub(zetherAuxiliaries.k);
+        zetherAuxiliaries.t = proof.tHat.redSub(zetherAuxiliaries.k);
 
 
         for (let i = 0; i < g_m / 2; i++) {
@@ -255,22 +247,22 @@ class ZVerifier{
         zetherAuxiliaries.tEval = proof.tCommits[0].mul ( zetherAuxiliaries.x ).add( proof.tCommits[1].mul( zetherAuxiliaries.x.redMul(zetherAuxiliaries.x) )); // replace with "commit"?
 
         const sigmaAuxiliaries = new SigmaAuxiliaries();
-        sigmaAuxiliaries.A_y = anonAuxiliaries.gR.mul( BNFieldfromHex( proof.s_sk ) ).add( anonAuxiliaries.yR[0][0].mul( BNFieldfromHex(proof.c).redNeg() ));
-        sigmaAuxiliaries.A_D = this.params.g.mul( BNFieldfromHex(proof.s_r ) ).add( statement.D.mul( BNFieldfromHex( proof.c ) .redNeg()));
+        sigmaAuxiliaries.A_y = anonAuxiliaries.gR.mul( proof.s_sk ).add( anonAuxiliaries.yR[0][0].mul( proof.c.redNeg() ));
+        sigmaAuxiliaries.A_D = utils.g().mul( proof.s_r ).add( statement.D.mul( proof.c  .redNeg()));
         sigmaAuxiliaries.gEpoch = utils.gEpoch( statement.epoch ) ;
 
-        sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( BNFieldfromHex( proof.s_sk ) ).add( statement.u.mul( BNFieldfromHex( proof.c ).redNeg()  ));
+        sigmaAuxiliaries.A_u = sigmaAuxiliaries.gEpoch.mul( proof.s_sk ).add( statement.u.mul(  proof.c .redNeg()  ));
 
 
-        sigmaAuxiliaries.A_X = anonAuxiliaries.y_XR.mul( BNFieldfromHex( proof.s_r) ).add( anonAuxiliaries.C_XR.mul( BNFieldfromHex( proof.c) .redNeg()  ) ) ;
+        sigmaAuxiliaries.A_X = anonAuxiliaries.y_XR.mul( proof.s_r ).add( anonAuxiliaries.C_XR.mul( proof.c .redNeg()  ) ) ;
 
-        sigmaAuxiliaries.c_commit = anonAuxiliaries.DR.add( proof.DPrime ).mul( BNFieldfromHex(proof.s_sk) ).add( anonAuxiliaries.CR[0][0].add( proof.CPrime).mul( BNFieldfromHex( proof.c) .redNeg() ) ).mul( zetherAuxiliaries.zs[0] ).add( anonAuxiliaries.CRnR.add( proof.CRnPrime ).mul( BNFieldfromHex(proof.s_sk) ).add( anonAuxiliaries.CLnR.add( proof.CLnPrime ). mul( BNFieldfromHex( proof.c) .redNeg() )).mul( zetherAuxiliaries.zs[1]));
-        sigmaAuxiliaries.A_t = this.params.g.mul( zetherAuxiliaries.t ).add(  this.params.h.mul( BNFieldfromHex( proof.tauX ) )).add( zetherAuxiliaries.tEval.neg() ).mul( BNFieldfromHex( proof.c ).redMul(anonAuxiliaries.wPow)).add( sigmaAuxiliaries.c_commit );
-        sigmaAuxiliaries.A_C0 = this.params.g.mul(  BNFieldfromHex( proof.s_vTransfer ) ).add( anonAuxiliaries.DR.mul( BNFieldfromHex( proof.s_sk )).add( anonAuxiliaries.CR[0][0].mul( BNFieldfromHex( proof.c).redNeg() )));
-        sigmaAuxiliaries.A_CLn = this.params.g.mul( BNFieldfromHex( proof.s_vDiff ) ).add( anonAuxiliaries.CRnR.mul( BNFieldfromHex(proof.s_sk) ).add( anonAuxiliaries.CLnR.mul( BNFieldfromHex( proof.c).redNeg())));
-        sigmaAuxiliaries.A_CPrime = this.params.h.mul( BNFieldfromHex( proof.s_nuTransfer) ).add( proof.DPrime.mul( BNFieldfromHex( proof.s_sk ) ).add( proof.CPrime.mul( BNFieldfromHex( proof.c ).redNeg())) ) ;
+        sigmaAuxiliaries.c_commit = anonAuxiliaries.DR.add( proof.DPrime ).mul( proof.s_sk ).add( anonAuxiliaries.CR[0][0].add( proof.CPrime).mul( proof.c.redNeg() ) ).mul( zetherAuxiliaries.zs[0] ).add( anonAuxiliaries.CRnR.add( proof.CRnPrime ).mul( proof.s_sk ).add( anonAuxiliaries.CLnR.add( proof.CLnPrime ). mul(  proof.c .redNeg() )).mul( zetherAuxiliaries.zs[1]));
+        sigmaAuxiliaries.A_t = utils.g().mul( zetherAuxiliaries.t ).add(  utils.h().mul( proof.tauX )).add( zetherAuxiliaries.tEval.neg() ).mul( proof.c.redMul(anonAuxiliaries.wPow)).add( sigmaAuxiliaries.c_commit );
+        sigmaAuxiliaries.A_C0 = utils.g().mul(  proof.s_vTransfer ).add( anonAuxiliaries.DR.mul(  proof.s_sk ).add( anonAuxiliaries.CR[0][0].mul( proof.c.redNeg() )));
+        sigmaAuxiliaries.A_CLn = utils.g().mul( proof.s_vDiff ).add( anonAuxiliaries.CRnR.mul( proof.s_sk ).add( anonAuxiliaries.CLnR.mul( proof.c.redNeg())));
+        sigmaAuxiliaries.A_CPrime = utils.h().mul( proof.s_nuTransfer ).add( proof.DPrime.mul( proof.s_sk ).add( proof.CPrime.mul( proof.c.redNeg())) ) ;
 
-        sigmaAuxiliaries.A_CLnPrime = this.params.h.mul( BNFieldfromHex( proof.s_nuDiff )).add( proof.CRnPrime.mul( BNFieldfromHex( proof.s_sk )).add( proof.CLnPrime.mul( BNFieldfromHex( proof.c ).redNeg())));
+        sigmaAuxiliaries.A_CLnPrime = utils.h().mul( proof.s_nuDiff ).add( proof.CRnPrime.mul( proof.s_sk ).add( proof.CLnPrime.mul( proof.c .redNeg())));
 
 
         sigmaAuxiliaries.c = utils.hash(ABICoder.encodeParameters([

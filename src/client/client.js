@@ -2,6 +2,8 @@ const BN = require('bn.js');
 
 const consts = require('./../consts');
 const utils = require('../utils/utils.js');
+const G1PointArray = utils.G1PointArray;
+
 const Service = require('../utils/service.js');
 const bn128 = require('../utils/bn128.js');
 
@@ -41,7 +43,7 @@ class Client {
 
             var [c, s] = utils.sign( ZSC.address, keypair);
 
-            const out = ZSC.register( this.account.keypair.y, c, s);
+            const out = ZSC.register( G1PointArray(this.account.keypair.y) , c, s);
             console.info(out);
 
 
@@ -242,7 +244,7 @@ class Client {
 
         const result = ZSC.simulateAccounts(y, consts.getEpoch() );
 
-        const unserialized = result.map((account) => [bn128.unserialize(account[0]), bn128.unserialize(account[1])]);
+        const unserialized = result.map((account) => [ account[0], account[1] ]);
 
         if (unserialized.some((account) => account[0].eq(bn128.zero) && account[1].eq(bn128.zero)))
             throw new Error("Please make sure all parties (including decoys) are registered."); // todo: better error message, i.e., which friend?
@@ -251,8 +253,11 @@ class Client {
         let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(value) : i === index[1] ? new BN(-value + consts.FEE ) : new BN(0)).add(bn128.unserialize(party).mul(r)));
 
         let D = bn128.curve.g.mul(r);
-        const CLn = unserialized.map((account, i) => bn128.serialize( account[0].add(C[i].neg())));
-        const CRn = unserialized.map((account) => bn128.serialize( account[1].add(D.neg())));
+        let CLn = unserialized.map((account, i) =>  account[0].add(C[i].neg()));
+        let CRn = unserialized.map((account) => account[1].add(D.neg()));
+
+        CLn = CLn.map(bn128.serialize);
+        CRn = CRn.map(bn128.serialize);
         C = C.map(bn128.serialize);
         D = bn128.serialize(D);
 
@@ -326,17 +331,17 @@ class Client {
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
 
-        const result = ZSC.simulateAccounts( [account.keypair.y], consts.getEpoch() );
+        let result = ZSC.simulateAccounts( [account.keypair.y], consts.getEpoch() );
 
         const simulated = result[0];
-        const CLn = bn128.serialize(bn128.unserialize(simulated[0]).add(bn128.curve.g.mul(new BN(-value))));
-        const CRn = simulated[1];
+        const CLn = bn128.serialize( simulated[0].add(bn128.curve.g.mul(new BN(-value))));
+        const CRn = bn128.serialize( simulated[1]);
         const proof = this.service.proveBurn(CLn, CRn, account.keypair.y, value, state.lastRollOver, this._home, account.keypair.x, state.available - value);
         const u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
         const tx = Blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.burn( {block}, account.keypair.y, value, u, proof, this._home );
+            return ZSC.burn( {block}, G1PointArray(account.keypair.y), value, G1PointArray(u), proof, this._home );
         };
 
         Blockchain.mining.includeTx(tx);

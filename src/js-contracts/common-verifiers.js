@@ -28,7 +28,7 @@ class CommonVerifiers{
     //IDENTICAL
     verify(proof, sigmaAuxiliaries, auxiliaries){
 
-        if ( sigmaAuxiliaries.c.eq( BNFieldfromHex(proof.c) === false ) ) throw "Sigma protocol challenge equality failure.";
+        if ( sigmaAuxiliaries.c.eq( proof.c === false ) ) throw "Sigma protocol challenge equality failure.";
 
         const ipAuxiliaries = new IPAuxiliaries(this._type);
         ipAuxiliaries.o = utils.hash(ABICoder.encodeParameters([
@@ -42,8 +42,8 @@ class CommonVerifiers{
 
         ipAuxiliaries.P = proof.BA.add(  proof.BS.mul( auxiliaries.x )).add( new GeneratorVector(this.params.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
 
-        ipAuxiliaries.P = ipAuxiliaries.P.add( utils.h().mul( BNFieldfromHex(proof.mu).redNeg() ));
-        ipAuxiliaries.P = ipAuxiliaries.P.add( ipAuxiliaries.u_x.mul( BNFieldfromHex(proof.tHat) ));
+        ipAuxiliaries.P = ipAuxiliaries.P.add( utils.h().mul( proof.mu.redNeg() ));
+        ipAuxiliaries.P = ipAuxiliaries.P.add( ipAuxiliaries.u_x.mul( proof.tHat ));
 
         // begin inner product verification
         const ipProof = new InnerProductProof('burner');
@@ -89,7 +89,7 @@ class CommonVerifiers{
             gTemp = gTemp.add( this.params.gs[i].mul( ipAuxiliaries.otherExponents[i] ) );
             hTemp = hTemp.add( ipAuxiliaries.hPrimes[i].mul( ipAuxiliaries.otherExponents[ this._m - 1 - i]));
         }
-        const cProof = gTemp.mul( BNFieldfromHex(ipProof.a) ).add( hTemp.mul( BNFieldfromHex(ipProof.b) )).add( ipAuxiliaries.u_x.mul( BNFieldfromHex(ipProof.a).redMul( BNFieldfromHex(ipProof.b) )));
+        const cProof = gTemp.mul( ipProof.a ).add( hTemp.mul( ipProof.b )).add( ipAuxiliaries.u_x.mul( ipProof.a.redMul( ipProof.b )));
         if ( !ipAuxiliaries.P.eq( cProof) )
             throw "Inner product equality check failure.";
 

@@ -26,11 +26,11 @@ class ZSC{
 
         this.address = '0x5d6c4ebf1b789883b58b0d7a7fe937e275212960';
 
-        //mapping(bytes32 => bytes32[2][2]) acc; // main account mapping
+        //mapping(bytes32 => Utils.G1Point[2]) acc; // main account mapping
         this._acc = {};
 
-        //mapping(bytes32 => bytes32[2][2]) pTransfers; // storage for pending transfers
-        this._pTransfers = {};
+        //mapping(bytes32 => Utils.G1Point[2]) pTransfers; // storage for pending transfers
+        this._pending = {};
 
         //mapping(bytes32 => uint256) lastRollOver;
         this._lastRollOver = {};
@@ -39,57 +39,56 @@ class ZSC{
 
         this.lastGlobalUpdate = 0;
 
-        this.bTotal = 0;
-
         this.events = new EventEmitter();
 
     }
 
-    //if not found, returns bytes32[2][2] with empty elements
+    //if not found returns G1Point[2] with empty points
     _getAccMap(hash){
 
         hash = utils.fromHex( hash );
-        let out = [];
-        if (this._acc[ hash ]) out = clone( this._acc[ hash ] );
 
-        for (let i=0; i < 2; i++){
-            if (!out[i]) out[i] = new Array (2);
-            for (let j=0; j < 2; j++)
-                if (!out[i][j]) out[i][j] = '0x0000000000000000000000000000000000000000000000000000000000000000';
-        }
+        if (this._acc[ hash ]) return [...this._acc[ hash ]];
+        else return [ G1Point0(), G1Point0() ];
 
-        return out;
     }
 
     _setAccMap(hash, value){
-        this._acc[ utils.fromHex(hash) ] = clone(value);
-    }
-
-    //if not found returns bytes32[2][2] with empty bytes
-    _getpTransfers(hash){
-
-        hash = utils.fromHex( hash );
-
-        let out = [];
-        if (this._pTransfers[ hash ]) out = clone( this._pTransfers[ hash ] );
-
-        for (let i=0; i < 2; i++){
-            if (!out[i]) out[i] = new Array (2);
-            for (let j=0; j < 2; j++)
-                if (!out[i][j]) out[i][j] = '0x0000000000000000000000000000000000000000000000000000000000000000';
-        }
-
-        return out;
-    }
-
-    _setpTransfers(hash, value, index){
 
         hash = utils.fromHex(hash);
 
-        if (index === undefined) this._pTransfers[ hash ] = clone(value);
+        if (!value[0].validate()) throw "Acc0 is invalid";
+        if (!value[1].validate()) throw "Acc1 is invalid";
+
+        this._acc[hash] = [...value];
+
+    }
+
+    //if not found returns G1Point[2] with empty points
+    _getPending(hash){
+
+        hash = utils.fromHex( hash );
+
+        if (this._pending[ hash ]) return [...this._pending[ hash ] ];
+        else return [G1Point0(), G1Point0() ];
+
+    }
+
+    _setPending(hash, value, index){
+
+        hash = utils.fromHex(hash);
+
+        if (index === undefined) {
+
+            for (let i=0; i < 2; i++)
+                if (!value[i].validate() ) throw "value is invalid";
+
+            this._pending[ hash ] = [...value];
+        }
         else {
-            if (!this._pTransfers[ hash ]) this._pTransfers[ hash ] = [];
-            this._pTransfers[ hash ][index] = clone(value);
+
+            if ( !value.validate() ) throw "value is invalid";
+            this._pending[ hash ][index] = value;
         }
     }
 
@@ -109,26 +108,19 @@ class ZSC{
     registered(yHash){
 
         const acc = this._getAccMap(yHash);
-        const pTransfers = this._getpTransfers(yHash);
+        const pending = this._getPending(yHash);
 
-        const zero = '0x0000000000000000000000000000000000000000000000000000000000000000';
+        const zero = utils.G1Point0();
 
-        return acc[0][0] !== zero || acc[0][1] !== zero || acc[1][0] !== zero || acc[1][1] !== zero ||
-               pTransfers[0][0] !== zero || pTransfers[0][1] !== zero || pTransfers[1][0] !== zero || pTransfers[1][1] !== zero;
+        const scratch = [ acc, pending ];
+
+        return !( scratch[0][0].eq(zero) && scratch[0][1].eq(zero) && scratch[1][0].eq(zero) && scratch[1][1].eq(zero) );
     }
 
     register(y, c,  s){
 
-        const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
-        const POut1 = PInput.mul( BNFieldfromHex(s) );  // m := g^s
-        if ( !POut1.validate() ) throw "Invalid POut1";
-
-        const PY = G1Point(  y[0],  y[1]  );
-        const Sub = new BN(utils.fromHex(c), 16).toRed( bn128.q ).redNeg(); //negate c in F_q
-        const POut2 = PY.mul( Sub );
-        if (!POut2.validate() ) throw "invalid Pout2";
-
-        const K = POut1.add(POut2);
+        const K = utils.g().mul( s ).add(y.mul(c.neg() ));
+        if (!K.validate() ) throw "K is invalid";
 
         const challenge = utils.hash(ABICoder.encodeParameters([
             'address',
@@ -136,23 +128,22 @@ class ZSC{
             'bytes32[2]',
         ], [
             this.address,
-            y,
+            bn128.serialize(y),
             bn128.serialize(K),
         ]));
 
-        if (!challenge.eq( BNFieldfromHex( c ) ))
+        if (!challenge.eq( c  ))
             throw new Error('Invalid registration signature!');
 
-        const yHash = utils.keccak256( utils.encodedPackaged(y) );
+        const yHash = utils.keccak256( utils.encodedPackaged( bn128.serialize(y) ) );
         if ( this.registered(yHash) ) throw "Account already registered!";
 
-        const scratch = [
-            y,
-            bn128.serialize(PInput),
-        ];
+        this._setPending(yHash, [ y, utils.g() ] );
 
-        this._setpTransfers(yHash, scratch );
-
+        return {
+            challenge,
+            yHash,
+        }
     }
 
     fund({block}, y, bTransfer){
@@ -163,38 +154,24 @@ class ZSC{
         this._rollOver({block}, yHash);
 
         if (  bTransfer > MAX || bTransfer < 0 )throw "Deposit amount out of range."; // uint, so other way not necessary?
-        if (  bTransfer + this.bTotal > MAX )throw "Fund pushes contract past maximum value.";
 
-        let scratch = this._getpTransfers(yHash)[0];
-        const PScratch = G1Point(  scratch[0], scratch[1] );
+        let scratch = this._getPending(yHash)[0];
+        scratch = scratch.add( utils.g().mul(bTransfer) );
+        if ( !scratch.validate() ) throw "Scratch is invalid";
 
-        const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
-
-        const POut1 = PInput.mul( new BN( bTransfer.toString(16), 16 ) );
-        if ( !POut1.validate() ) throw "Invalid POut1";
-
-        const POut2 = POut1.add( PScratch );
-        if ( !POut2.validate() ) throw "Invalid POut2";
-
-        scratch = bn128.serialize( POut2 );
-
-        this._setpTransfers( yHash, scratch, 0  );
+        this._setPending( yHash, scratch, 0  );
 
         //require(coin.transferFrom(msg.sender, address(this), bTransfer), "Transfer from sender failed.");
-
-        this.bTotal += bTransfer;
 
     }
 
     simulateAccounts(y, epoch) {
 
-        // all of this could be assembled locally by querying `acc` and `pTransfers` (and `lastRollOver`) and assembling things by hand
-        // turns out this is extremely _slow_ though, because of the ~ 4 * N queries which must be made. turns out it's much faster
-        // to simply move the entire process into a contract method, and in fact this allows us to make the above 3 private
+        // in this function and others, i have to use public + memory (and hence, a superfluous copy from calldata)
+        // only because calldata structs aren't yet supported by solidity. revisit this in the future.
 
         const size = y.length;
 
-        // accounts = new bytes32[2][2][](size);
         const accounts = [];
 
         for (let i=0; i < size; i++){
@@ -205,37 +182,16 @@ class ZSC{
 
             if (this._getLastRollOver(yHash) < epoch) {
 
-                const scratch = this._getpTransfers(yHash );
+                const scratch = this._getPending(yHash );
+                accounts[i][0] = accounts[i][0].add( scratch[0] );
+                if ( !accounts[i][0].validate() ) throw "Error PointSum1";
 
-                //See explanation https://github.com/jpmorganchase/anonymous-zether/issues/17#issuecomment-565848230
-                {
-                    const Point1 = bn128.unserialize( scratch[0] );
-                    const Point2 = bn128.unserialize( accounts[i][0] );
-
-                    const PointSum = Point1.add(Point2);
-
-                    if ( !PointSum.validate() ) throw "Error PointSum1";
-
-                    accounts[i][0] = bn128.serialize( PointSum );
-
-                }
-
-                {
-                    const Point1 = bn128.unserialize( scratch[1] );
-                    const Point2 = bn128.unserialize( accounts[i][1] );
-
-                    const PointSum = Point1.add(Point2);
-
-                    if ( !PointSum.validate() ) throw "Error PointSum2";
-
-                    accounts[i][1] = bn128.serialize( PointSum );
-
-                }
+                accounts[i][1] = accounts[i][1].add( scratch[1] );
+                if ( !accounts[i][1].validate() ) throw "Error PointSum1";
 
             }
 
         }
-
 
         return accounts;
 
@@ -246,83 +202,32 @@ class ZSC{
     transfer( {block}, C, D, y, u, proof){
 
         let size = y.length;
+        if (C.length !== size) throw "Input array length mismatch!";
 
+        C = C.map( it => bn128.unserialize(it) );
+        D = bn128.unserialize(D);
+        y = y.map( it => bn128.unserialize(it) );
+        u = bn128.unserialize(u);
 
         const CLn = [], CRn = [];
-        for (let i=0; i <2; i++) {
-            CLn[i] = new Array(size);
-            CRn[i] = new Array(size);
-        }
-
-        if (C.length !== size) throw "Input array length mismatch!";
 
         for (let i=0; i < size; i++) {
 
-            const yHash = utils.keccak256(utils.encodedPackaged(y[i]));
+            const yHash = utils.keccak256(utils.encodedPackaged( bn128.serialize(y[i]) ));
             if (!this.registered(yHash)) throw new Error("Account not yet registered.");
 
             this._rollOver({block}, yHash);
 
-            let scratch = this._getpTransfers(yHash);
+            let scratch = this._getPending(yHash);
+            const pending = [];
+            pending[0] = scratch[0].add( C[i].neg() );
+            pending[1] = scratch[1].add( D.neg() );
 
-
-            {
-                const diff = bn128.bytes( BNFieldfromHex("30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( C[i][1] ) ) );
-
-                const P1 = G1Point(  scratch[0][0] ,  scratch[0][1]  );
-                const P2 = G1Point(  C[i][0] ,  diff  );
-
-                const sum = P1.add(P2);
-
-                scratch[0] = bn128.serialize(sum);
-
-                if (!sum.validate()) throw "error point 1";
-
-                const diff_2 = bn128.bytes( BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ) );
-
-                const P3 = G1Point(  scratch[1][0] ,  scratch[1][1]   );
-                const P4 = G1Point(  D[0] ,  diff_2  );
-
-                const sum2 = P3.add(P4);
-
-                scratch[1] = bn128.serialize(sum2);
-
-                if (!sum2.validate()) throw "error point 2";
-
-            }
-
-
-
-            this._setpTransfers( yHash, scratch ); // credit / debit / neither y's account.
+            this._setPending( yHash, pending ); // credit / debit / neither y's account.
 
             scratch = this._getAccMap(yHash);
-
-            {
-
-                const diff = bn128.bytes( BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( C[i][1] )) );
-
-                const P1 = G1Point(  scratch[0][0] ,  scratch[0][1]  );
-                const P2 = G1Point(  C[i][0] ,  diff  );
-
-                const sum = P1.add(P2);
-
-                CLn[i] = bn128.serialize(sum);
-
-                if (!sum.validate()) throw "error point 1";
-
-                const diff_2 = bn128.bytes( BNFieldfromHex( "30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd47").redSub( BNFieldfromHex( D[1] ) ) );
-
-                const P3 = G1Point(  scratch[1][0] ,  scratch[1][1]   );
-                const P4 = G1Point(  D[0] ,  diff_2  );
-
-                const sum2 = P3.add(P4);
-
-                CRn[i] = bn128.serialize(sum2);
-
-                if (!sum2.validate()) throw "error point 2";
-
-
-            }
+            CLn[i] = scratch[0].add( C[i].neg() );
+            CRn[i] = scratch[1].add( D.neg() );
 
         }
 
@@ -331,34 +236,24 @@ class ZSC{
          */
 
         this._rollOver({block}, consts.MINER_HASH);
-        const scratch = this._getpTransfers( consts.MINER_HASH );
+        const scratch = this._getPending( consts.MINER_HASH );
 
-        const PScratch = G1Point(  scratch[0][0], scratch[0][1] );
-        const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
-        const Sub = consts.FEE_BN;
+        const out1 = utils.g().mul( consts.FEE_BN );
 
-        const out1 = PInput.mul(Sub);
-        const out2 = PScratch.add( out1 );
+        scratch[0] = scratch[0].add( out1 );
+        this._setPending( consts.MINER_HASH, scratch );
 
-        if (!out1.validate() || !out2.validate()) throw "invalid points";
-
-        scratch[0] = bn128.serialize(out2);
-        this._setpTransfers( consts.MINER_HASH, scratch );
-
-        const uHash = utils.keccak256(  utils.encodedPackaged( u ) ); // NO modulo
+        const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
 
         if (this._nonceSet[ utils.fromHex( uHash ) ]) throw "Nonce already seen!";
 
-        if ( !ZVerifier.verifyTransfer(CLn, CRn, C, D, y, this.lastGlobalUpdate, u, proof) ) throw "Transfer proof verification failed!";
-
         this._nonceSet[ utils.fromHex( uHash ) ] = true;
+
+        if ( !ZVerifier.verifyTransfer(CLn, CRn, C, D, y, this.lastGlobalUpdate, u, proof) ) throw "Transfer proof verification failed!";
 
         return [ C, D, y, u, proof ];
     }
 
-
-
-    // function _rollOver(bytes32 yHash) internal {
     _rollOver({block}, yHash ){
 
         let e = Math.floor( block.timestamp / consts.BLOCK_TIME_OUT / consts.EPOCH_LENGTH);
@@ -366,35 +261,13 @@ class ZSC{
 
         if (this._getLastRollOver(yHash) < e) {
 
-            const scratch = [ this._getAccMap(yHash), this._getpTransfers(yHash) ];
+            const scratch = [ this._getAccMap(yHash), this._getPending(yHash) ];
 
-            //see explanation https://github.com/jpmorganchase/anonymous-zether/issues/17#issuecomment-565848230
-            {
-                const P1 = G1Point( scratch[0][0][0], scratch[0][0][1] );
-                const P2 = G1Point( scratch[1][0][0], scratch[1][0][1] );
+            const out1 = scratch[0][0].add( scratch[1][0] );
+            const out2 = scratch[0][1].add( scratch[1][1] );
 
-                const Sum = P1.add(P2);
-
-                if ( !Sum.validate() ) throw "Sum is invalid";
-
-                scratch[0][0] = bn128.serialize( Sum );
-
-            }
-
-            {
-                const P1 = G1Point( scratch[0][1][0], scratch[0][1][1] );
-                const P2 = G1Point( scratch[1][1][0], scratch[1][1][1] );
-
-                const Sum = P1.add(P2);
-
-                if ( !Sum.validate() ) throw "Sum is invalid";
-
-                scratch[0][1] = bn128.serialize( Sum );
-
-            }
-
-            this._setAccMap(yHash, scratch[0] );
-            this._setpTransfers(yHash, [ bn128.serialize(utils.G1Point0()), bn128.serialize(utils.G1Point0() ) ] );
+            this._setAccMap(yHash, [ out1, out2 ] );
+            this._setPending(yHash, [ utils.G1Point0(), utils.G1Point0() ] );
             this._setLastRollOver(yHash, e);
 
         }
@@ -413,7 +286,7 @@ class ZSC{
 
     burn ({block}, y, bTransfer, u, proof, sender){
 
-        const yHash = utils.keccak256(utils.encodedPackaged( y ));
+        const yHash = utils.keccak256(utils.encodedPackaged( bn128.serialize(y) ));
         if (!this.registered(yHash)) throw new Error("Account not yet registered.");
 
         this._rollOver({block}, yHash);
@@ -421,49 +294,22 @@ class ZSC{
         if ( 0 > bTransfer || bTransfer > MAX) throw "Transfer amount out of range";
 
 
-        let scratch = this._getpTransfers(yHash); // could technically use sload, but... let's not go there.
+        let pending = this._getPending(yHash); // could technically use sload, but... let's not go there.
+        pending[0] = pending[0].add( utils.g().mul( new BN(bTransfer).toRed(bn128.q).neg()) );
+        this._setPending(yHash, pending);  // debit y's balance
 
-        {
+        const scratch = this._getAccMap(yHash); // simulate debit of acc---just for use in verification, won't be applied
+        scratch[0] = scratch[0].add( utils.g().mul( new BN(bTransfer).toRed(bn128.q).neg()) );
 
-            const PScratch = G1Point(  scratch[0][0], scratch[0][1] );
-            const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
-            const Sub = BNFieldfromHex("0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001").redSub( new BN(bTransfer).toRed(bn128.q) );
-
-            const out1 = PInput.mul(Sub);
-            const out2 = PScratch.add( out1 ); // scratch[0] = acc[yHash][0] * g ^ -b, scratch[1] doesn't change
-
-            if (!out1.validate() || !out2.validate()) throw "invalid points";
-
-            scratch[0] = bn128.serialize(out2);
-
-        }
-
-        this._setpTransfers(yHash, scratch);  // debit y's balance
-
-        scratch = this._getAccMap(yHash); // simulate debit of acc---just for use in verification, won't be applied
-
-        {
-            const PScratch = G1Point(  scratch[0][0], scratch[0][1] );
-            const PInput = G1Point(  "0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4",  "0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875"  );
-            const Sub = BNFieldfromHex("0x30644e72e131a029b85045b68181585d2833e84879b9709143e1f593f0000001").redSub( new BN(bTransfer).toRed(bn128.q) );
-
-            const out1 = PInput.mul(Sub);
-            const out2 = PScratch.add( out1 ); // scratch[0] = acc[yHash][0] * g ^ -b, scratch[1] doesn't change
-
-            if (!out1.validate() || !out2.validate()) throw "invalid points";
-
-            scratch[0] = bn128.serialize(out2);
-        }
-
-        const uHash = utils.keccak256(  utils.encodedPackaged( u ) ); // NO modulo
+        const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
 
         if (this._nonceSet[ utils.fromHex( uHash ) ]) throw "Nonce already seen!";
 
-        if ( !BurnerVerifier.verifyBurn( G1PointArray(scratch[0]), G1PointArray(scratch[1]), G1PointArray(y), bTransfer, this.lastGlobalUpdate, G1PointArray(u), sender, proof) ) throw "Burn proof verification failed!";
+        this._nonceSet[ utils.fromHex( uHash ) ] = true;
+
+        if ( !BurnerVerifier.verifyBurn( scratch[0], scratch[1], y, bTransfer, this.lastGlobalUpdate, u, sender, proof) ) throw "Burn proof verification failed!";
 
         //require(coin.transfer(msg.sender, bTransfer), "This shouldn't fail... Something went severely wrong.");
-
-        this._nonceSet[ utils.fromHex( uHash ) ] = true;
 
         return true;
     }

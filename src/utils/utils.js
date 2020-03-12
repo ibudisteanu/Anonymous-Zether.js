@@ -24,7 +24,7 @@ utils.sign = (address, keypair) => {
     ]));
 
     var s = c.redMul(keypair['x']).redAdd(k);
-    return [bn128.bytes(c), bn128.bytes(s)];
+    return [ c, s ];
 };
 
 
@@ -76,6 +76,8 @@ utils.bufferFromHex = (hexStr) => {
 };
 
 utils.encodedPackaged = (array) => {
+
+    if (!Array.isArray(array)) throw "wrong input. Array is not an array";
 
     const out =[];
     for (let i=0; i < array.length; i++)
