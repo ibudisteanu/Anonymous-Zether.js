@@ -290,8 +290,8 @@ class Client {
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
-            const proof2 = this._zsc.proveAmountSender(y, index[1], r);
-            this._zsc.verifyAmountSender(value, index[1], y, C, D, proof2);
+            // const proof2 = this._zsc.proveAmountSender(y, index[1], r);
+            // this._zsc.verifyAmountSender(value, index[1], y, C, D, proof2);
 
             this._blockchain.incrementEpoch();
         };

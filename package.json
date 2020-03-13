@@ -1,9 +1,10 @@
 {
-  "name": "zero",
+  "name": "zetherjs",
   "version": "0.1.0",
   "description": "",
+  "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node test.js"
   },
   "dependencies": {
     "bn.js": "^5.1.1",
