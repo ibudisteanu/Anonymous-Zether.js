@@ -4,7 +4,6 @@ const bn128 = require('./utils/bn128');
 
 const consts = {
     BLOCK_TIME_OUT: 1000,
-    EPOCH_LENGTH: 10,
 
     FEE: 1,
     FEE_BN: new BN(1).toRed(bn128.q),

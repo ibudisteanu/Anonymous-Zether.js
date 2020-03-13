@@ -192,8 +192,8 @@ class Client {
         const size = 2 + decoys.length;
         const estimated = this.estimate(size, true); // see notes above
 
-        if (estimated > consts.EPOCH_LENGTH * 1000)
-            throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + consts.EPOCH_LENGTH + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(this.estimate(size, true) / 1000) + " seconds.";
+        if (estimated > this._blockchain.epochLength * 1000)
+            throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + this._blockchain.epochLength + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(this.estimate(size, true) / 1000) + " seconds.";
 
         if (estimated > wait) {
             console.log(wait < 3100 ? "Initiating transfer." : "Your transfer has been queued. Please wait " + seconds + " second, until the next epoch...");
@@ -290,8 +290,8 @@ class Client {
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
-            // const proof2 = this._zsc.proveAmountSender(y, index[1], r);
-            // this._zsc.verifyAmountSender(value, index[1], y, C, D, proof2);
+            const proof2 = this._zsc.proveAmountSender(y, index[1], r);
+            this._zsc.verifyAmountSender(value, index[1], y, C, D, proof2);
 
             this._blockchain.incrementEpoch();
         };

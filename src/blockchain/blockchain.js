@@ -21,6 +21,7 @@ class Blockchain{
 
         this.txCounter = 0;
         this.epoch = 0;
+        this.epochLength = 10;
 
         this.events = new EventEmitter();
     }
