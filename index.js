@@ -6,13 +6,17 @@ const consts = require('./src/consts');
 
 async function run(){
 
+    const blockchain = new Blockchain();
+
+    const zsc = new ZSC(blockchain);
+
     const account = '0x620CB390Cd936a8E6de0270ed3254a0779475b4C';
 
-    var alice = new Client( account );
-    var bob = new Client( account );
-    var carol = new Client( account );
-    var dave = new Client( account );
-    var eve = new Client( account );
+    var alice = new Client( zsc, blockchain, account );
+    var bob = new Client( zsc,blockchain, account );
+    var carol = new Client( zsc, blockchain, account );
+    var dave = new Client( zsc, blockchain, account );
+    var eve = new Client( zsc, blockchain, account );
 
     await alice.register();
     await bob.register();
@@ -25,30 +29,25 @@ async function run(){
      * B => C
      */
 
-    alice.friends.add("Bob", bob.account.public() );
-    bob.friends.add("Carol", carol.account.public() );
-    alice.friends.add("Dave", dave.account.public() );
-    alice.friends.add("Eve", eve.account.public() );
-
     //deposit into alice
-    Blockchain.onNewBlock = async ({block})=>{
+    blockchain.onNewBlock = async ({block})=>{
 
         if (block.height === 1)
             await alice.deposit(1000);
 
 
         if (block.height === 10)
-            await alice.transfer("Bob", 100);
+            await alice.transfer( bob.account.public(), 100);
             //await alice.withdraw(10 );
 
         if (block.height === 20)
-            await alice.transfer("Bob", 100);
+            await alice.transfer( bob.account.public(), 100);
 
         if (block.height === 30)
             await alice.withdraw(10);
 
         if (block.height === 40)
-            await alice.transfer("Bob", 100);
+            await alice.transfer( bob.account.public(), 100, [carol.account.public(), dave.account.public() ]);
 
         // if (block.height === 20)
         //     await alice.transfer("Bob", 100);

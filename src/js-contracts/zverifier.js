@@ -27,13 +27,7 @@ class ZVerifier{
 
         this.params = new GeneratorParams(g_m);
 
-
         this._commonVerifier = new CommonVerifier( 'verifier', this.params, g_m, g_n);
-
-        // this._commonVerifier.params.gs.map( (it, index) => console.log( 'gs['+index+'] = ' + bn128.serialize(it)) );
-        // console.log('--------------');
-        // console.log('--------------');
-        // this._commonVerifier.params.hs.map( (it, index) => console.log( 'hs['+index+'] = ' + bn128.serialize(it)) );
 
     }
 
@@ -300,20 +294,22 @@ class ZVerifier{
 
     recursivePolynomials (baseline, current, accum, f) {
 
+        accum = new BN(accum);
+        if (!accum.red) accum = accum.toRed(bn128.q);
+
         // have to do a bunch of re-allocating because solidity won't let me have something which is internal and also modifies (internal) state. (?)
         const size = Math.pow( 2, current - baseline ); // size is at least 2...
         const result = new Array( size );
 
         if (current == baseline) {
-            result[0] = new BN(accum);
-            if (!result[0].red) result[0] = result[0].toRed(bn128.q);
+            result[0] = accum;
             return result;
         }
 
         current = current - 1;
 
-        const left = this.recursivePolynomials(baseline, current, new BN(accum).toRed(bn128.q).redMul(f[current][0]), f);
-        const right = this.recursivePolynomials(baseline, current, new BN(accum).toRed(bn128.q).redMul(f[current][1]), f);
+        const left = this.recursivePolynomials(baseline, current, accum.redMul(f[current][0]), f);
+        const right = this.recursivePolynomials(baseline, current, accum.redMul(f[current][1]), f);
         for (let i = 0; i < size / 2; i++) {
             result[i] = left[i];
             result[i + size / 2] = right[i];

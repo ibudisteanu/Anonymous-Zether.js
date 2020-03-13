@@ -1,28 +1,25 @@
-const clone = require('clone');
 const ABICoder = require('web3-eth-abi');
 
 const utils  = require("./../utils/utils");
-const BN = require('bn.js')
-const consts = require('./../consts');
+const BN = require('bn.js');
 
-const { FieldVector } = require('./../prover/algebra.js');
 const bn128 = require('../utils/bn128.js');
-const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
-const G1PointArray = utils.G1PointArray;
 
 const BNFieldfromHex = utils.BNFieldfromHex;
 
 const MAX = 4294967295; // 2^32 - 1 // no sload for constants...!
 
 const ZVerifier = require("./zverifier");
-const BurnerVerifier = require("./burferverifier");
+const BurnerVerifier = require("./burnerverifier");
 
 const EventEmitter = require('events').EventEmitter;
 
 class ZSC{
 
-    constructor() {
+    constructor( blockchain ) {
+
+        this._blockchain = blockchain;
 
         this.address = '0x5d6c4ebf1b789883b58b0d7a7fe937e275212960';
 
@@ -256,7 +253,7 @@ class ZSC{
 
     _rollOver({block}, yHash ){
 
-        let e = consts.getEpoch();
+        let e = this._blockchain.getEpoch();
         console.log("rollOver epoch", e);
 
         if (this._getLastRollOver(yHash) < e) {
@@ -370,7 +367,7 @@ class ZSC{
 }
 
 
-module.exports = new ZSC();
+module.exports = ZSC;
 
 
 

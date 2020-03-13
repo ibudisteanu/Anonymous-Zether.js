@@ -1,12 +1,13 @@
 const bn128 = require('./../utils/bn128');
 const consts = require('./../consts');
-const ZSC = require ('./../js-contracts/zsc');
 
 class Account {
 
-    constructor(client) {
+    constructor(client, blockchain, zsc) {
 
-        this.client = client;
+        this._client = client;
+        this._blockchain = blockchain;
+        this._zsc = zsc;
 
         this.keypair = undefined;
         this._state = {
@@ -21,11 +22,11 @@ class Account {
 
     _simulate (timestamp) {
 
-        var updated = {};
+        const updated = {};
         updated.available = this._state.available;
         updated.pending = this._state.pending;
         updated.nonceUsed = this._state.nonceUsed;
-        updated.lastRollOver = consts.getEpoch(timestamp);
+        updated.lastRollOver = this._blockchain.getEpoch(timestamp);
 
         if (this._state.lastRollOver < updated.lastRollOver)
         {
@@ -35,27 +36,27 @@ class Account {
         }
 
         return updated;
-    };
+    }
 
     balance () {
         return this._state.available + this._state.pending;
-    };
+    }
 
     public  () {
-        return this.keypair['y'];
-    };
+        return this.keypair.y;
+    }
 
     secret (){
-        return bn128.bytes(this.keypair['x']);
-    };
+        return bn128.bytes(this.keypair.x);
+    }
 
     decodeBalance(){
 
-        const result = ZSC.simulateAccounts([ this.keypair.y ], consts.getEpoch() + 1);
+        const result = this._zsc.simulateAccounts([ this.keypair.y ], this._blockchain.getEpoch() + 1);
 
         const simulated = result[0];
 
-        this._state.available = ZSC.readBalance( simulated[0], simulated[1], this.keypair.x );
+        this._state.available = this._zsc.readBalance( simulated[0], simulated[1], this.keypair.x );
 
 
     }

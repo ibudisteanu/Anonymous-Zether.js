@@ -20,6 +20,7 @@ class Blockchain{
         this._height = -1;
 
         this.txCounter = 0;
+        this.epoch = 0;
 
         this.events = new EventEmitter();
     }
@@ -36,7 +37,7 @@ class Blockchain{
 
     async pushBlock(block){
 
-        console.info('Block', block.height, ' TX ', block.transactions.length , '  ', consts.getEpoch(block.timestamp )% 1000, '  ',  );
+        console.info('Block', block.height, ' TX ', block.transactions.length , '  ', this.getEpoch(block.timestamp )% 1000, '  ',  );
 
         this._blocks[ this.getHeight()+1 ] = block;
         this.setHeight( this.getHeight() +1 );
@@ -63,6 +64,18 @@ class Blockchain{
 
     }
 
+    away ()  { // returns ms away from next epoch change
+        return 60*1000;
+    }
+
+    getEpoch (timestamp) {
+        return this.epoch;
+    }
+
+    incrementEpoch () {
+        this.epoch += 1;
+    }
+
 }
 
-module.exports = new Blockchain();
+module.exports = Blockchain;

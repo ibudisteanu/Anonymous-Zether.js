@@ -7,43 +7,38 @@ const G1PointArray = utils.G1PointArray;
 const Service = require('../utils/service.js');
 const bn128 = require('../utils/bn128.js');
 
-const Blockchain = require('./../blockchain/blockchain');
-
 const Account = require('./account');
-const Friends = require('./friends');
-
-const ZSC = require ('./../js-contracts/zsc');
-
 
 class Client {
 
-    constructor(home) {
+    constructor(zsc, blockchain, home) {
 
+        this._blockchain = blockchain;
+        this._zsc = zsc;
         this._home = home;
 
         this._transfers = new Set();
 
 
-        this.account = new Account(this);
-        this.friends = new Friends(this);
+        this.account = new Account(this, this._blockchain, this._zsc);
 
         this.service = new Service();
 
-        ZSC.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
+        this._zsc.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
 
     }
 
     async register (secret) {
 
-        if (secret === undefined) {
-            const keypair = utils.createAccount();
-            this.account.keypair = keypair;
+        if ( !secret ) {
+
+            this.account.keypair = utils.createAccount();
             console.log("New account generated.");
 
 
-            var [c, s] = utils.sign( ZSC.address, keypair);
+            var [c, s] = utils.sign( this._zsc.address, this.account.keypair);
 
-            const out = ZSC.register( G1PointArray(this.account.keypair.y) , c, s);
+            const out = this._zsc.register( G1PointArray(this.account.keypair.y) , c, s);
             console.info(out);
 
 
@@ -71,7 +66,7 @@ class Client {
 
             const party = parties[i];
 
-            if (!this.match( this.account.keypair.y, party )) continue;
+            if ( !this.match( this.account.keypair.y, party )) continue;
 
             this.account._state = this.account._simulate(block.timestamp);
 
@@ -90,25 +85,25 @@ class Client {
                 if (  b2.lte(bn128.B_MAX_BN) && b.gte(bn128.B_MAX_BN) ){
 
                     //sender
-                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b2, type: "sender"  } );
+                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b2, type: "sender"  } );
 
-                    const value = ZSC.readBalance( C[i], D, this.account.keypair.x, true );
+                    const value = this._zsc.readBalance( C[i], D, this.account.keypair.x, true );
                     if (value > 0) {
                         console.log("Transfer of " + value + " sent! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
-                        ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "sender"  } );
+                        this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "sender"  } );
                     } else throw "Sender couldn't decode";
 
 
                 } else if (  b.lte(bn128.B_MAX_BN) && b2.gte(bn128.B_MAX_BN) ){
 
                     //receiver
-                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b, type: "receiver"  } );
+                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b, type: "receiver"  } );
 
-                    const value = ZSC.readBalance( C[i], D, this.account.keypair.x );
+                    const value = this._zsc.readBalance( C[i], D, this.account.keypair.x );
                     if (value > 0) {
                         this.account._state.pending += value;
                         console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
-                        ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "receiver"  } );
+                        this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "receiver"  } );
                     } else throw "Receiver couldn't decode";
 
                 }
@@ -116,19 +111,19 @@ class Client {
 
             }catch(err){
 
-                const value1 = ZSC.readBalance( C[i], D , this.account.keypair.x, true);
-                const value2 = ZSC.readBalance( C[i], D, this.account.keypair.x );
+                const value1 = this._zsc.readBalance( C[i], D , this.account.keypair.x, true);
+                const value2 = this._zsc.readBalance( C[i], D, this.account.keypair.x );
 
                 if (value1 > 0) {
 
                     //sender
-                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value1, type: "sender"  } );
+                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value1, type: "sender"  } );
 
                 }
                 if (value2 > 0){
 
                     //receiver
-                    ZSC.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value2, type: "receiver"  } );
+                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value2, type: "receiver"  } );
 
                 }
 
@@ -140,19 +135,18 @@ class Client {
 
     async deposit (value) {
 
-        if (this.account.keypair === undefined)
-            throw "Client's account is not yet initialized!";
+        if ( !this.account.keypair) throw "Client's account is not yet initialized!";
 
         const account = this.account;
 
-        console.log("Initiating deposit.");
+        console.log( "Initiating deposit." );
 
-        const tx = Blockchain.createTransaction();
+        const tx = this._blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.fund( {block}, account.keypair.y, value);
+            return this._zsc.fund( {block}, account.keypair.y, value);
         };
 
-        Blockchain.mining.includeTx(tx);
+        this._blockchain.mining.includeTx(tx);
 
 
         tx.onProcess = ()=>{
@@ -160,7 +154,7 @@ class Client {
             account._state = account._simulate(); // have to freshly call it
             account._state.pending += value;
             console.log("Deposit of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
-            consts.incrementEpoch();
+            this._blockchain.incrementEpoch();
 
         };
 
@@ -174,33 +168,35 @@ class Client {
         // the 20-millisecond buffer is designed to give the callback time to fire (see below).
     }
 
-    async transfer (name, value, decoys) {
-        if (this.account.keypair === undefined)
+    async transfer ( destinationPublicKey, value, decoys = []) {
+
+        if ( !this.account.keypair )
             throw "Client's account is not yet initialized!";
-        decoys = decoys ? decoys : [];
+
         const account = this.account;
         const state = account._simulate();
         if (value > state.available + state.pending)
             throw "Requested transfer amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
-        const wait = consts.away();
+
+        const wait = this._blockchain.away();
         const seconds = Math.ceil(wait / 1000);
-        const plural = seconds === 1 ? "" : "s";
+
         if (value > state.available) {
-            console.log("Your transfer has been queued. Please wait " + seconds + " second" + plural + ", for the release of your funds...");
+            console.log("Your transfer has been queued. Please wait " + seconds + " second, for the release of your funds...");
             return utils.sleep(wait).then(() => this.transfer(name, value, decoys));
         }
         if (state.nonceUsed) {
-            console.log("Your transfer has been queued. Please wait " + seconds + " second" + plural + ", until the next epoch...");
+            console.log("Your transfer has been queued. Please wait " + seconds + " second, until the next epoch...");
             return utils.sleep(wait).then(() => this.transfer(name, value, decoys));
         }
         const size = 2 + decoys.length;
         const estimated = this.estimate(size, true); // see notes above
 
         if (estimated > consts.EPOCH_LENGTH * 1000)
-            throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + consts.EPOCH_LENGTH + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(estimate(size, true) / 1000) + " seconds.";
+            throw "The anonset size (" + size + ") you've requested might take longer than the epoch length (" + consts.EPOCH_LENGTH + " seconds) to prove. Consider re-deploying, with an epoch length at least " + Math.ceil(this.estimate(size, true) / 1000) + " seconds.";
 
         if (estimated > wait) {
-            console.log(wait < 3100 ? "Initiating transfer." : "Your transfer has been queued. Please wait " + seconds + " second" + plural + ", until the next epoch...");
+            console.log(wait < 3100 ? "Initiating transfer." : "Your transfer has been queued. Please wait " + seconds + " second, until the next epoch...");
             return utils.sleep(wait).then(() => this.transfer(name, value, decoys));
         }
 
@@ -213,17 +209,15 @@ class Client {
             }
             throw "Anonset's size (including you and the recipient) must be a power of two. Add " + (next - size) + " or remove " + (size - previous) + ".";
         }
-        const friends = this.friends.show();
-        if (!(name in friends))
-            throw "Name \"" + name + "\" hasn't been friended yet!";
-        if (this.match(friends[name], account.keypair.y))
+
+        if (this.match(destinationPublicKey, account.keypair.y) )
             throw "Sending to yourself is currently unsupported (and useless!).";
-        const y = [account.keypair.y].concat([friends[name]]); // not yet shuffled
-        decoys.forEach((decoy) => {
-            if (!(decoy in friends))
-                throw "Decoy \"" + decoy + "\" is unknown in friends directory!";
-            y.push(friends[decoy]);
-        });
+
+        const y = [account.keypair.y, destinationPublicKey]; // not yet shuffled
+        for (const decoy of decoys)
+            y.push(decoy);
+
+
         const index = [];
         let m = y.length;
         while (m !== 0) { // https://bost.ocks.org/mike/shuffle/
@@ -233,7 +227,7 @@ class Client {
             y[m] = temp;
             if (this.match(temp, account.keypair.y))
                 index[0] = m;
-            else if (this.match(temp, friends[name]))
+            else if (this.match(temp, destinationPublicKey))
                 index[1] = m;
         } // shuffle the array of y's
         if (index[0] % 2 === index[1] % 2) {
@@ -243,8 +237,7 @@ class Client {
             index[1] = index[1] + (index[1] % 2 === 0 ? 1 : -1);
         } // make sure you and your friend have opposite parity
 
-
-        const result = ZSC.simulateAccounts(y, consts.getEpoch() );
+        const result = this._zsc.simulateAccounts(y, this._blockchain.getEpoch() );
 
         const unserialized = result.map((account) => [ account[0], account[1] ]);
 
@@ -276,13 +269,13 @@ class Client {
         v2 = v2.redAdd( new BN(value).toRed(bn128.q) );
         v2 = bn128.bytes(v2);
 
-        const tx = Blockchain.createTransaction();
+        const tx = this._blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.transfer( {block}, C, D, y, u, proof);
+            return this._zsc.transfer( {block}, C, D, y, u, proof);
         };
 
 
-        Blockchain.mining.includeTx(tx);
+        this._blockchain.mining.includeTx(tx);
 
 
         tx.onProcess = ({block})=>{
@@ -293,38 +286,39 @@ class Client {
             account._state.nonceUsed = true;
             account._state.pending -= value;
 
-            ZSC.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, v2, proof }} );
+            this._zsc.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, v2, proof }} );
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
-            // const proof2 = ZSC.proveAmountSender(y, index[1], r);
-            // ZSC.verifyAmountSender(value, index[1], y, C, D, proof2);
+            // const proof2 = this._zsc.proveAmountSender(y, index[1], r);
+            // this._zsc.verifyAmountSender(value, index[1], y, C, D, proof2);
 
-            consts.incrementEpoch();
+            this._blockchain.incrementEpoch();
         };
 
 
-    };
+    }
 
 
     async withdraw (value) {
-        if (this.account.keypair === undefined)
+
+        if (!this.account.keypair )
             throw "Client's account is not yet initialized!";
+
         const account = this.account;
         const state = account._simulate();
         if (value > state.available + state.pending)
             throw "Requested withdrawal amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
 
 
-        const wait = consts.away();
+        const wait = this._blockchain.away();
         const seconds = Math.ceil(wait / 1000);
-        const plural = seconds === 1 ? "" : "s";
         if (value > state.available) {
-            console.log("Your withdrawal has been queued. Please wait " + seconds + " second" + plural + ", for the release of your funds...");
+            console.log("Your withdrawal has been queued. Please wait " + seconds + " second, for the release of your funds...");
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
         if (state.nonceUsed) {
-            console.log("Your withdrawal has been queued. Please wait " + seconds + " second" + plural + ", until the next epoch...");
+            console.log("Your withdrawal has been queued. Please wait " + seconds + " second, until the next epoch...");
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
 
@@ -333,7 +327,7 @@ class Client {
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
 
-        let result = ZSC.simulateAccounts( [account.keypair.y], consts.getEpoch() );
+        let result = this._zsc.simulateAccounts( [account.keypair.y], this._blockchain.getEpoch() );
 
         const simulated = result[0];
         const CLn = bn128.serialize( simulated[0].add(bn128.curve.g.mul(new BN(-value))));
@@ -341,12 +335,12 @@ class Client {
         const proof = this.service.proveBurn(CLn, CRn, account.keypair.y, state.lastRollOver, this._home, account.keypair.x, state.available - value);
         const u = bn128.serialize(utils.u(state.lastRollOver, account.keypair.x));
 
-        const tx = Blockchain.createTransaction();
+        const tx = this._blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return ZSC.burn( {block}, G1PointArray(account.keypair.y), value, G1PointArray(u), proof, this._home );
+            return this._zsc.burn( {block}, G1PointArray(account.keypair.y), value, G1PointArray(u), proof, this._home );
         };
 
-        Blockchain.mining.includeTx(tx);
+        this._blockchain.mining.includeTx(tx);
 
 
         tx.onProcess = ()=>{
@@ -356,16 +350,16 @@ class Client {
             account._state.pending -= value;
 
             console.log("Withdrawal of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
-            consts.incrementEpoch();
+            this._blockchain.incrementEpoch();
 
         };
 
 
-    };
+    }
 
     match (address, candidate) {
         return address[0] === candidate[0] && address[1] === candidate[1];
-    };
+    }
 
 }
 

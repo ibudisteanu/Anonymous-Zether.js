@@ -1,18 +1,17 @@
-const consts = require('../consts');
-
 class EpochWatcher{
 
-    constructor(){
+    constructor(blockchain){
 
         setInterval( this.tick, 100 );
 
         this._prevEpoch = undefined;
+        this._blockchain = blockchain;
 
     }
 
     tick(){
 
-        const epoch = consts.getEpoch();
+        const epoch = this._blockchain.getEpoch();
 
         if (this._prevEpoch !== epoch){
             console.warn('EPOCH', epoch % 1000);
@@ -23,4 +22,4 @@ class EpochWatcher{
 
 }
 
-module.exports = new EpochWatcher();
+module.exports = EpochWatcher;

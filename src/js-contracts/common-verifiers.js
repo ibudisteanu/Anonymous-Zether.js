@@ -4,8 +4,6 @@ const utils = require('./../utils/utils');
 
 const IPAuxiliaries = require('./../prover/schemas/ip-auxiliaries');
 const InnerProductProof = require('./../prover/schemas/inner-product-proof');
-const BurnProof = require('./../prover/schemas/burn-proof');
-const ZetherProof = require('./../prover/schemas/zether-proof');
 
 const ABICoder = require('web3-eth-abi');
 
