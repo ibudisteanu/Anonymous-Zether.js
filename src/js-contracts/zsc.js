@@ -154,7 +154,6 @@ class ZSC{
 
         let scratch = this._getPending(yHash)[0];
         scratch = scratch.add( utils.g().mul(bTransfer) );
-        if ( !scratch.validate() ) throw "Scratch is invalid";
 
         this._setPending( yHash, scratch, 0  );
 
