@@ -7,31 +7,43 @@ const ABICoder = require('web3-eth-abi');
 const utils = {};
 
 utils.determinePublicKey = (x) => {
-    return bn128.serialize(bn128.curve.g.mul(x));
+    return bn128.serialize(bn128.curve.g.mul(  utils.BNFieldfromHex(x) ));
 };
 
-utils.sign = (address, keypair) => {
-    var k = bn128.randomScalar();
-    var K = bn128.curve.g.mul(k);
-    var c = utils.hash(ABICoder.encodeParameters([
+utils.sign = (address, keypair, secret ) => {
+
+    let k;
+    if (!secret ) k = bn128.randomScalar();
+    else {
+        if ( !Buffer.isBuffer(secret) || secret.length !== 32 ) throw "secret must be a 32 byte buffer";
+        k = new BN( secret.toString('hex') , 16).toRed(bn128.q);
+    }
+
+    const K = bn128.curve.g.mul(k);
+    const c = utils.hash(ABICoder.encodeParameters([
         'address',
         'bytes32[2]',
         'bytes32[2]',
     ], [
         address,
-        keypair['y'],
+        keypair.y,
         bn128.serialize(K),
     ]));
 
-    var s = c.redMul(keypair['x']).redAdd(k);
+    const s = c.redMul( utils.BNFieldfromHex(keypair.x) ).redAdd(k);
     return [ c, s ];
 };
 
 
-utils.createAccount = () => {
-    var x = bn128.randomScalar();
-    var y = utils.determinePublicKey(x);
-    return { 'x': x, 'y': y };
+utils.createAccount = (x) => {
+
+    if (!x) x = bn128.randomScalar();
+
+    const y = utils.determinePublicKey(x);
+    return {
+        x,
+        y
+    };
 };
 
 utils.mapInto = (seed) => { // seed is flattened 0x + hex string
@@ -61,11 +73,11 @@ utils.hash = (encoded) => { // ags are serialized
 
 utils.keccak256 = (hex)=>{
     return '0x'+createKeccakHash('keccak256').update( utils.bufferFromHex(hex) ) .digest('hex');
-}
+};
 
 utils.keccak256Simple = (input)=>{
     return '0x'+createKeccakHash('keccak256').update( input ) .digest('hex');
-}
+};
 
 utils.fromHex = (hexStr) => {
     return hexStr.replace(/0x/g, '');
@@ -128,8 +140,13 @@ utils.gBurn_n = 5;
 
 utils.BNFieldfromHex = ( hex )=>{
 
-    let out = hex;
-    if (hex instanceof BN === false) out = new BN( utils.fromHex(hex), 16 );
+    let out;
+
+    if (Buffer.isBuffer(hex)) out = new BN(  hex.toString('hex'), 16 );
+    else if (hex instanceof BN === false && typeof hex === "string") out = new BN( utils.fromHex(hex), 16 );
+    else out = hex;
+
+    if (out instanceof BN === false) throw "input is invalid";
 
     if (!out.red) out = out.toRed( bn128.q );
 

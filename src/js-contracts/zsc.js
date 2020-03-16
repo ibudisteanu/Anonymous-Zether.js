@@ -17,11 +17,11 @@ const EventEmitter = require('events').EventEmitter;
 
 class ZSC{
 
-    constructor( blockchain ) {
+    constructor( blockchain, address = '0x5d6c4ebf1b789883b58b0d7a7fe937e275212960' ) {
 
         this._blockchain = blockchain;
 
-        this.address = '0x5d6c4ebf1b789883b58b0d7a7fe937e275212960';
+        this.address = address;
 
         //mapping(bytes32 => Utils.G1Point[2]) acc; // main account mapping
         this._acc = {};
@@ -143,12 +143,12 @@ class ZSC{
         }
     }
 
-    fund({block}, y, bTransfer){
+    fund( y, bTransfer){
 
         const yHash = utils.keccak256( utils.encodedPackaged(y) );
         if (!this.registered(yHash)) throw new Error("Account not yet registered.");
 
-        this._rollOver({block}, yHash);
+        this._rollOver( yHash );
 
         if (  bTransfer > MAX || bTransfer < 0 )throw "Deposit amount out of range."; // uint, so other way not necessary?
 
@@ -156,8 +156,6 @@ class ZSC{
         scratch = scratch.add( utils.g().mul(bTransfer) );
 
         this._setPending( yHash, scratch, 0  );
-
-        //require(coin.transferFrom(msg.sender, address(this), bTransfer), "Transfer from sender failed.");
 
     }
 
@@ -195,7 +193,7 @@ class ZSC{
 
 
     //Transfer is verified
-    transfer( {block}, C, D, y, u, proof){
+    transfer(  C, D, y, u, proof){
 
         let size = y.length;
         if (C.length !== size) throw "Input array length mismatch!";
@@ -212,7 +210,7 @@ class ZSC{
             const yHash = utils.keccak256(utils.encodedPackaged( bn128.serialize(y[i]) ));
             if (!this.registered(yHash)) throw new Error("Account not yet registered.");
 
-            this._rollOver({block}, yHash);
+            this._rollOver( yHash);
 
             let scratch = this._getPending(yHash);
             const pending = [];
@@ -231,7 +229,7 @@ class ZSC{
          * MINER FEE
          */
 
-        // this._rollOver({block}, consts.MINER_HASH);
+        // this._rollOver( consts.MINER_HASH);
         // const scratch = this._getPending( consts.MINER_HASH );
         //
         // const out1 = utils.g().mul( consts.FEE_BN );
@@ -250,7 +248,7 @@ class ZSC{
         return [ C, D, y, u, proof ];
     }
 
-    _rollOver({block}, yHash ){
+    _rollOver( yHash ){
 
         let e = this._blockchain.getEpoch();
         console.log("rollOver epoch", e);
@@ -280,12 +278,12 @@ class ZSC{
     }
 
 
-    burn ({block}, y, bTransfer, u, proof, sender){
+    burn ( y, bTransfer, u, proof, sender){
 
         const yHash = utils.keccak256(utils.encodedPackaged( bn128.serialize(y) ));
         if (!this.registered(yHash)) throw new Error("Account not yet registered.");
 
-        this._rollOver({block}, yHash);
+        this._rollOver( yHash );
 
         if ( bTransfer < 0 || bTransfer > MAX) throw "Transfer amount out of range";
 
@@ -303,8 +301,6 @@ class ZSC{
         this._nonceSet[ utils.fromHex( uHash ) ] = true;
 
         if ( !BurnerVerifier.verifyBurn( scratch[0], scratch[1], y,  this.lastGlobalUpdate, u, sender, proof) ) throw "Burn proof verification failed!";
-
-        //require(coin.transfer(msg.sender, bTransfer), "This shouldn't fail... Something went severely wrong.");
 
         return true;
     }

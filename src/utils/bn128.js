@@ -40,6 +40,10 @@ bn128.bytes = (i) => { // i is a BN (red)
     return "0x" + i.toString(16, 64);
 };
 
+bn128.toBuffer = (i) => { // i is a BN (red)
+    return Buffer.from( i.toString(16, 64), 'hex');
+};
+
 bn128.serialize = (point) => {
     if (point.x == null && point.y == null)
         return ["0x0000000000000000000000000000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000000000000000000000000000"];

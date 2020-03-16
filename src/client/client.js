@@ -19,7 +19,6 @@ class Client {
 
         this._transfers = new Set();
 
-
         this.account = new Account(this, this._blockchain, this._zsc);
 
         this.service = new Service();
@@ -34,7 +33,6 @@ class Client {
 
             this.account.keypair = utils.createAccount();
             console.log("New account generated.");
-
 
             var [c, s] = utils.sign( this._zsc.address, this.account.keypair);
 
@@ -143,7 +141,7 @@ class Client {
 
         const tx = this._blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return this._zsc.fund( {block}, account.keypair.y, value);
+            return this._zsc.fund(  account.keypair.y, value);
         };
 
         this._blockchain.mining.includeTx(tx);
@@ -170,6 +168,7 @@ class Client {
 
     async transfer ( destinationPublicKey, value, decoys = []) {
 
+        
         if ( !this.account.keypair )
             throw "Client's account is not yet initialized!";
 
@@ -271,7 +270,7 @@ class Client {
 
         const tx = this._blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return this._zsc.transfer( {block}, C, D, y, u, proof);
+            return this._zsc.transfer(  C, D, y, u, proof);
         };
 
 
@@ -337,7 +336,7 @@ class Client {
 
         const tx = this._blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return this._zsc.burn( {block}, G1PointArray(account.keypair.y), value, G1PointArray(u), proof, this._home );
+            return this._zsc.burn( G1PointArray(account.keypair.y), value, G1PointArray(u), proof, this._home );
         };
 
         this._blockchain.mining.includeTx(tx);

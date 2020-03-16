@@ -95,7 +95,7 @@ class ZetherProof {
 
     unserialize(arr){
 
-        arr = Buffer.from( utils.fromHex(arr), "hex");
+        arr = Buffer.from( utils.bufferFromHex(arr), "hex");
 
         this.BA = G1Point( slice(arr, 0), slice(arr, 32) );
         this.BS = G1Point( slice(arr, 64), slice(arr, 96));
