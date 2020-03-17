@@ -50,7 +50,7 @@ bn128.serialize = (point) => {
     return [bn128.bytes(point.getX()), bn128.bytes(point.getY())];
 };
 
-bn128.serializeBuffer = (point) => {
+bn128.serializeToBuffer = (point) => {
     if (point.x == null && point.y == null)
         return Buffer.alloc(64);
     return Buffer.concat([
@@ -66,7 +66,7 @@ bn128.unserialize = (serialization) => {
     return bn128.curve.point(serialization[0].slice(2), serialization[1].slice(2)); // no check if valid curve point?
 };
 
-bn128.unserializeBuffer = (serialization) => {
+bn128.unserializeFromBuffer = (serialization) => {
 
     if (serialization.equals( Buffer.alloc(64)))
         return bn128.zero;

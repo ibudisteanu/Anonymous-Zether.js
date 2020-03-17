@@ -157,6 +157,7 @@ class ZSC{
 
         this._setPending( yHash, scratch, 0  );
 
+        return true;
     }
 
     simulateAccounts(y, epoch) {

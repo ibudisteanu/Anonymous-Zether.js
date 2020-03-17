@@ -1,9 +1,10 @@
 const BN = require('bn.js');
 
 const utils = require('../utils/utils.js');
-const Service = require('../utils/service.js');
 const bn128 = require('../utils/bn128.js');
+
 const Account = require('./account');
+const Service = require('./../utils/service')
 
 class Client {
 
@@ -16,8 +17,6 @@ class Client {
         this._transfers = new Set();
 
         this.account = new Account(this, this._blockchain, this._zsc);
-
-        this.service = new Service();
 
         this._zsc.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
 
@@ -244,7 +243,7 @@ class Client {
         let CLn = unserialized.map((account, i) =>  account[0].add( C[i] ));
         let CRn = unserialized.map((account) => account[1].add( D ));
 
-        const proof = this.service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, state.available - value, index);
+        const proof = Service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, state.available - value, index);
         const u = utils.u(state.lastRollOver, account.keypair.x);
 
         //whisper the value to the receiver
@@ -318,7 +317,7 @@ class Client {
         const simulated = result[0];
         const CLn = simulated[0].add(bn128.curve.g.mul(new BN(-value)));
         const CRn = simulated[1];
-        const proof = this.service.proveBurn(CLn, CRn, account.keypair.y, state.lastRollOver, this._home, account.keypair.x, state.available - value);
+        const proof = Service.proveBurn(CLn, CRn, account.keypair.y, state.lastRollOver, this._home, account.keypair.x, state.available - value);
         const u = utils.u(state.lastRollOver, account.keypair.x);
 
         const tx = this._blockchain.createTransaction();
