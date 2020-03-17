@@ -81,14 +81,14 @@ class ZVerifier{
             'bytes32[2]',
         ], [
             bn128.bytes(statementHash),
-            proof.BA.serialize(),
-            proof.BS.serialize(),
-            proof.A.serialize(),
-            proof.B.serialize(),
-            proof.C.serialize(),
-            proof.D.serialize(),
-            proof.E.serialize(),
-            proof.F.serialize(),
+            bn128.serialize( proof.BA ),
+            bn128.serialize( proof.BS ),
+            bn128.serialize( proof.A ),
+            bn128.serialize( proof.B ),
+            bn128.serialize( proof.C ),
+            bn128.serialize( proof.D ),
+            bn128.serialize( proof.E ),
+            bn128.serialize( proof.F ),
         ]));
 
         anonAuxiliaries.w = utils.hash(ABICoder.encodeParameters([

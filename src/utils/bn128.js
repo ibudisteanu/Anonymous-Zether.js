@@ -50,15 +50,29 @@ bn128.serialize = (point) => {
     return [bn128.bytes(point.getX()), bn128.bytes(point.getY())];
 };
 
+bn128.serializeBuffer = (point) => {
+    if (point.x == null && point.y == null)
+        return Buffer.alloc(64);
+    return Buffer.concat([
+        bn128.toBuffer(point.getX() ),
+        bn128.toBuffer(point.getY() ),
+    ])
+};
+
 bn128.unserialize = (serialization) => {
     if (serialization[0] == "0x0000000000000000000000000000000000000000000000000000000000000000" && serialization[1] == "0x0000000000000000000000000000000000000000000000000000000000000000")
         return bn128.zero;
 
-    const point = bn128.curve.point(serialization[0].slice(2), serialization[1].slice(2)); // no check if valid curve point?
-    point.toJSON = () => bn128.serialize(point);
-    point.serialize = () => bn128.serialize(point);
+    return bn128.curve.point(serialization[0].slice(2), serialization[1].slice(2)); // no check if valid curve point?
+};
 
-    return point;
+bn128.unserializeBuffer = (serialization) => {
+
+    if (serialization.equals( Buffer.alloc(64)))
+        return bn128.zero;
+
+    const serializationHex = serialization.toString('hex');
+    return bn128.curve.point(serializationHex.slice(0, 64), serializationHex.slice(64));
 };
 
 bn128.toVector = (point) => {
