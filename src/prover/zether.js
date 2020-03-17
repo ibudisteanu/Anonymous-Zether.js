@@ -50,19 +50,18 @@ class ZetherProver {
             'bytes32[2][]',
             'uint256',
         ], [
-            statement['CLn'],
-            statement['CRn'],
-            statement['C'],
-            statement['D'],
-            statement['y'],
-            statement['epoch'],
+            statement.CLn.map( bn128.serialize ),
+            statement.CRn.map( bn128.serialize ),
+            statement.C.map( bn128.serialize ),
+            bn128.serialize( statement.D ),
+            statement.y.map( bn128.serialize ),
+            statement.epoch,
         ]));
 
-        statement['CLn'] = new GeneratorVector(statement['CLn'].map(bn128.unserialize));
-        statement['CRn'] = new GeneratorVector(statement['CRn'].map(bn128.unserialize));
-        statement['C'] = new GeneratorVector(statement['C'].map(bn128.unserialize));
-        statement['D'] = bn128.unserialize(statement['D']);
-        statement['y'] = new GeneratorVector(statement['y'].map(bn128.unserialize));
+        statement.CLn = new GeneratorVector(statement.CLn);
+        statement.CRn = new GeneratorVector(statement.CRn);
+        statement.C = new GeneratorVector(statement.C);
+        statement.y = new GeneratorVector(statement.y);
         witness['bTransfer'] = new BN(witness['bTransfer']).toRed(bn128.q);
         witness['bDiff'] = new BN(witness['bDiff']).toRed(bn128.q);
 
@@ -314,7 +313,10 @@ class ZetherProver {
             primeBase: primeBase,
             P: P
         };
-        var ipWitness = { 'l': lPoly.evaluate(x), 'r': rPoly.evaluate(x) };
+        var ipWitness = {
+            l: lPoly.evaluate(x),
+            r: rPoly.evaluate(x)
+        };
         proof.ipProof = this.ipProver.generateProof( ipStatement, ipWitness, o);
 
         return proof;

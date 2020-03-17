@@ -33,8 +33,8 @@ class InnerProductProof {
         return {
             ls: this.ls.map(it => it.toJSON() ),
             rs: this.rs.map(it => it.toJSON() ),
-            a: utils.fixHexString( this.a ),
-            b: utils.fixHexString( this.b ),
+            a: this.a.toString(16),
+            b: this.b.toString(16),
         }
     }
 

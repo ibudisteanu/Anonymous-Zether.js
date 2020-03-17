@@ -62,7 +62,7 @@ class ZVerifier{
             statement.CLn.map ( bn128.serialize  ),
             statement.CRn.map ( bn128.serialize  ),
             statement.C.map ( bn128.serialize  ),
-            statement.D.serialize() ,
+            bn128.serialize(statement.D),
             statement.y.map ( bn128.serialize  ),
             statement.epoch
         ]));

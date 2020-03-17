@@ -7,7 +7,7 @@ const ABICoder = require('web3-eth-abi');
 const utils = {};
 
 utils.determinePublicKey = (x) => {
-    return bn128.serialize(bn128.curve.g.mul(  utils.BNFieldfromHex(x) ));
+    return bn128.curve.g.mul(  x );
 };
 
 utils.sign = (address, keypair, secret ) => {
@@ -26,11 +26,11 @@ utils.sign = (address, keypair, secret ) => {
         'bytes32[2]',
     ], [
         address,
-        keypair.y,
+        bn128.serialize(keypair.y),
         bn128.serialize(K),
     ]));
 
-    const s = c.redMul( utils.BNFieldfromHex(keypair.x) ).redAdd(k);
+    const s = c.redMul( keypair.x ).redAdd(k);
     return [ c, s ];
 };
 
@@ -59,13 +59,9 @@ utils.mapInto = (seed) => { // seed is flattened 0x + hex string
     }
 };
 
-utils.gEpoch = (epoch) => {
-    return utils.mapInto(soliditySha3("Zether", epoch));
-};
+utils.gEpoch = epoch => utils.mapInto(soliditySha3("Zether", epoch));
 
-utils.u = (epoch, x) => {
-    return utils.gEpoch(epoch).mul(x);
-};
+utils.u = (epoch, x) => utils.gEpoch(epoch).mul(x);
 
 utils.hash = (encoded) => { // ags are serialized
     return new BN(soliditySha3(encoded).slice(2), 16).toRed(bn128.q);
@@ -98,33 +94,19 @@ utils.encodedPackaged = (array) => {
     return '0x'+Buffer.concat(out).toString("hex");
 };
 
-utils.fixHexString = (hex, noBytes = 32, suffix = true )=>{
-
-    if (Buffer.isBuffer(hex)) hex = hex.toString("hex");
-    hex = hex.replace(/0x/g, '');
-
-    if (hex.length % 2 === 1) hex = '0'+hex;
-
-    return (suffix ? '0x' : '') + Buffer.alloc( 32 - Math.ceil( hex.length / 2 ) ).toString("hex" ) + hex;
-
-};
-
-utils.sleep = (wait) => new Promise((resolve) => { setTimeout(resolve, wait); });
+utils.sleep = wait => new Promise(resolve => setTimeout(resolve, wait) );
 
 utils.G1Point = (a,b)=>bn128.unserialize([a,b]);
 utils.G1Point0 = ()=>utils.G1Point("0x0000000000000000000000000000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000000000000000000000000000");
 
-utils.G1PointArray = (a) => {
+
+utils.G1PointBuffer = (a) => {
     return bn128.unserialize([ a[0], a[1] ]);
 };
 
-utils.g = () => {
-    return utils.G1Point('0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4', '0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875' );
-};
+utils.g = () => utils.G1Point('0x077da99d806abd13c9f15ece5398525119d11e11e9836b2ee7d23f6159ad87d4', '0x01485efa927f2ad41bff567eec88f32fb0a0f706588b4e41a8d587d008b7f875' );
 
-utils.h = () => {
-    return utils.G1Point('0x01b7de3dcf359928dd19f643d54dc487478b68a5b2634f9f1903c9fb78331aef', '0x2bda7d3ae6a557c716477c108be0d0f94abc6c4dc6b1bd93caccbcceaaa71d6b' );
-};
+utils.h = () => utils.G1Point('0x01b7de3dcf359928dd19f643d54dc487478b68a5b2634f9f1903c9fb78331aef', '0x2bda7d3ae6a557c716477c108be0d0f94abc6c4dc6b1bd93caccbcceaaa71d6b' );
 
 utils.slice = (a, pos, length = 32) => {
     const out = Buffer.alloc(length );

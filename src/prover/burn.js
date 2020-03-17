@@ -28,16 +28,13 @@ class BurnProver {
             'uint256',
             'address',
         ], [
-            statement['CLn'],
-            statement['CRn'],
-            statement['y'],
+            bn128.serialize(statement['CLn']),
+            bn128.serialize(statement['CRn']),
+            bn128.serialize(statement['y']),
             statement['epoch'],
             statement['sender'],
         ])); // useless to break this out up top. "psychologically" easier
 
-        statement['CLn'] = bn128.unserialize(statement['CLn']);
-        statement['CRn'] = bn128.unserialize(statement['CRn']);
-        statement['y'] = bn128.unserialize(statement['y']);
         witness['bDiff'] = new BN(witness['bDiff']).toRed(bn128.q);
 
         var aL = new FieldVector(witness['bDiff'].toString(2, 32).split("").reverse().map((i) => new BN(i, 2).toRed(bn128.q)));

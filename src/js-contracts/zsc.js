@@ -145,7 +145,7 @@ class ZSC{
 
     fund( y, bTransfer){
 
-        const yHash = utils.keccak256( utils.encodedPackaged(y) );
+        const yHash = utils.keccak256( utils.encodedPackaged( bn128.serialize(y) ) );
         if (!this.registered(yHash)) throw new Error("Account not yet registered.");
 
         this._rollOver( yHash );
@@ -170,7 +170,7 @@ class ZSC{
 
         for (let i=0; i < size; i++){
 
-            const yHash = utils.keccak256( utils.encodedPackaged(y[i]) );
+            const yHash = utils.keccak256( utils.encodedPackaged( bn128.serialize(y[i]) ) );
 
             accounts[i] = this._getAccMap(yHash);
 
@@ -197,11 +197,6 @@ class ZSC{
 
         let size = y.length;
         if (C.length !== size) throw "Input array length mismatch!";
-
-        C = C.map( it => bn128.unserialize(it) );
-        D = bn128.unserialize(D);
-        y = y.map( it => bn128.unserialize(it) );
-        u = bn128.unserialize(u);
 
         const CLn = [], CRn = [];
 
@@ -309,8 +304,6 @@ class ZSC{
     // CL and CR are "flat", x is a BN.
     readBalance (CL, CR, x, negate = false) {
 
-        CL = bn128.unserialize(CL);
-        CR = bn128.unserialize(CR);
 
         if (negate){
             CL = CL.neg();
@@ -335,10 +328,10 @@ class ZSC{
         const k = bn128.randomScalar();
 
         const K = bn128.curve.g.mul( k );
-        const Y = bn128.unserialize( y[i] ).mul( k );
+        const Y = y[i].mul( k );
 
         const c = utils.hash( bn128.representation(K) + bn128.representation(Y).substr(2) );
-        const s = k.add( c.redMul( BNFieldfromHex(r)  ) );
+        const s = k.add( c.redMul( r  ) );
 
         return {c, s};
     }
@@ -346,10 +339,10 @@ class ZSC{
     verifyAmountSender(b, i, y, C, D, proof){
 
         //K_r
-        const Kr = bn128.curve.g.mul( proof.s ).add(  bn128.unserialize(D).mul( proof.c.neg() ) );
+        const Kr = bn128.curve.g.mul( proof.s ).add(  D.mul( proof.c.neg() ) );
 
         //Y_r
-        const Yr = bn128.unserialize( y[i] ).mul( proof.s ).add(  bn128.curve.g.mul( new BN( b )).add( bn128.unserialize(C[i]) ).mul( proof.c.neg() ));
+        const Yr = y[i].mul( proof.s ).add(  bn128.curve.g.mul( new BN( b )).add( C[i] ).mul( proof.c.neg() ));
 
         const hash = utils.hash( bn128.representation(Kr) + bn128.representation(Yr).substr(2) );
 

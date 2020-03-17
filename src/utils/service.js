@@ -11,36 +11,40 @@ class Service {
 
     proveTransfer (CLn, CRn, C, D, y, epoch, sk, r, bTransfer, bDiff, index) {
 
-        var statement = {};
-        statement['CLn'] = CLn;
-        statement['CRn'] = CRn;
-        statement['C'] = C;
-        statement['D'] = D;
-        statement['y'] = y;
-        statement['epoch'] = epoch;
+        var statement = {
+            CLn,
+            CRn,
+            C,
+            D,
+            y,
+            epoch,
+        };
 
-        var witness = {};
-        witness['sk'] = sk;
-        witness['r'] = r;
-        witness['bTransfer'] = bTransfer;
-        witness['bDiff'] = bDiff;
-        witness['index'] = index;
+        var witness = {
+            sk,
+            r,
+            bTransfer,
+            bDiff,
+            index
+        };
 
         return this.zether.generateProof(statement, witness).serialize();
     };
 
 
     proveBurn (CLn, CRn, y, epoch, sender, sk, bDiff) {
-        var statement = {};
-        statement['CLn'] = CLn;
-        statement['CRn'] = CRn;
-        statement['y'] = y;
-        statement['epoch'] = epoch;
-        statement['sender'] = sender;
+        var statement = {
+            CLn,
+            CRn,
+            y,
+            epoch,
+            sender,
+        };
 
-        var witness = {};
-        witness['sk'] = sk;
-        witness['bDiff'] = bDiff;
+        var witness = {
+            sk,
+            bDiff,
+        };
 
         return this.burn.generateProof(statement, witness).serialize();
     }

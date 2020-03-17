@@ -270,8 +270,6 @@ class AdvancedMath{
 
         const powers = new Array( m );
 
-        base = BNFieldfromHex( base );
-
         powers[0] = new BN(1).toRed(bn128.q);
         powers[1] = base;
         for (let i = 2; i < m; i++)
