@@ -1,4 +1,3 @@
-const bn128  = require('./../../utils/bn128');
 const utils = require('./../../utils/utils');
 
 class BurnAuxiliaries {

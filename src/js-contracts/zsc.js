@@ -6,8 +6,6 @@ const BN = require('bn.js');
 const bn128 = require('../utils/bn128.js');
 const G1Point0 = utils.G1Point0;
 
-const BNFieldfromHex = utils.BNFieldfromHex;
-
 const MAX = 4294967295; // 2^32 - 1 // no sload for constants...!
 
 const ZVerifier = require("./zverifier");

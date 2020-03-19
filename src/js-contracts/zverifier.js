@@ -2,12 +2,7 @@ const BN = require('bn.js');
 const bn128 = require("./../utils/bn128");
 const utils = require('./../utils/utils');
 const ABICoder = require('web3-eth-abi');
-const { FieldVector, AdvancedMath } = require('./../prover/algebra.js');
-const GeneratorParams = require('./../prover/generator-params');
 
-const consts = require('./../consts');
-
-const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
 
 const ZetherProof = require('./../prover/schemas/zether-proof');
@@ -15,6 +10,7 @@ const ZetherStatement = require('./../prover/schemas/zether-statement');
 const AnonAuxiliaries = require('./../prover/schemas/anon-auxiliaries');
 const ZetherAuxiliaries = require('./../prover/schemas/zether-auxiliaries');
 const SigmaAuxiliaries = require('./../prover/schemas/sigma-auxiliaries');
+const IP = require('./../utils/ip');
 
 const CommonVerifier = require('./common-verifiers');
 
@@ -25,9 +21,7 @@ class ZVerifier{
 
     constructor(){
 
-        this.params = new GeneratorParams(g_m);
-
-        this._commonVerifier = new CommonVerifier( 'verifier', this.params, g_m, g_n);
+        this._commonVerifier = new CommonVerifier( 'verifier',  g_m, g_n);
 
     }
 
@@ -130,19 +124,19 @@ class ZVerifier{
 
 
         for (let k=0; k < 2 * anonAuxiliaries.m; k++)
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add(  this.params.gs[k].mul( anonAuxiliaries.f[k][1]) ) ;
+            anonAuxiliaries.temp = anonAuxiliaries.temp.add(  IP.gs(k).mul( anonAuxiliaries.f[k][1]) ) ;
 
         if (proof.B.mul(anonAuxiliaries.w).add(proof.A).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_A ) ) ) === false) throw "Recovery failure for B^w * A.";
 
 
         anonAuxiliaries.temp = G1Point0();
         for (let k = 0; k < 2 * anonAuxiliaries.m; k++)
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add( (this.params.gs[k].mul( anonAuxiliaries.f[k][1].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[k][1])))) );
+            anonAuxiliaries.temp = anonAuxiliaries.temp.add( (IP.gs(k).mul( anonAuxiliaries.f[k][1].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[k][1])))) );
 
 
         if ( proof.C.mul(anonAuxiliaries.w).add(proof.D).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_C ) ) )  === false ) throw "Recovery failure for C^w * D.";
 
-        anonAuxiliaries.temp = this.params.gs[0].mul( anonAuxiliaries.f[0][1].redMul(anonAuxiliaries.f[anonAuxiliaries.m][1])).add( this.params.gs[1].mul( anonAuxiliaries.f[0][0].redMul(anonAuxiliaries.f[anonAuxiliaries.m][0])));
+        anonAuxiliaries.temp = IP.gs(0).mul( anonAuxiliaries.f[0][1].redMul(anonAuxiliaries.f[anonAuxiliaries.m][1])).add( IP.gs(1).mul( anonAuxiliaries.f[0][0].redMul(anonAuxiliaries.f[anonAuxiliaries.m][0])));
 
         if ( proof.F.mul( anonAuxiliaries.w ).add( proof.E ).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_E )  ) ) === false ) throw "Recovery failure for F^w * E";
 

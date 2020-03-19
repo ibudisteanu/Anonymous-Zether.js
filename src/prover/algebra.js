@@ -261,33 +261,7 @@ class Polynomial {
             return new Polynomial(product);
         }
     }
-};
-
-class AdvancedMath{
-
-
-    powers(base, m = utils.g_m) {
-
-        const powers = new Array( m );
-
-        powers[0] = new BN(1).toRed(bn128.q);
-        powers[1] = base;
-        for (let i = 2; i < m; i++)
-            powers[i] = powers[i - 1].redMul(base);
-
-        return powers;
-    }
-
-    hadamardPoints (A, B) {
-
-        const x = A.getX().mul( B.getX() ).toRed(bn128.q);
-        const y = A.getY().mul( B.getY() ).toRed(bn128.q);
-        return bn128.unserialize( x.toString(16), y.toString(16) );
-
-    };
-
-
 }
 
 
-module.exports = { FieldVector, GeneratorVector, Convolver, FieldVectorPolynomial, PolyCommitment, Polynomial, AdvancedMath: new AdvancedMath() };
+module.exports = { FieldVector, GeneratorVector, Convolver, FieldVectorPolynomial, PolyCommitment, Polynomial };

@@ -34,13 +34,6 @@ async function run(){
         if (block.height === 1)
             await alice.deposit(1000);
 
-        if (block.height === 4) {
-            await alice.withdraw(500);
-        }
-
-        if (block.height === 8)
-            await alice.withdraw(700 );
-
         if (block.height === 10)
             await alice.transfer( bob.account.public(), 100);
             //await alice.withdraw(10 );

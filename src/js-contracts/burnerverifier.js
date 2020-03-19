@@ -2,9 +2,6 @@ const bn128 = require("./../utils/bn128");
 const utils = require('./../utils/utils');
 const ABICoder = require('web3-eth-abi');
 
-const { FieldVector, AdvancedMath } = require('./../prover/algebra.js');
-const GeneratorParams = require('./../prover/generator-params');
-
 const BN = require('bn.js');
 
 const BurnStatement = require('./../prover/schemas/burn-statement');
@@ -21,9 +18,7 @@ class BurnVerifier{
 
     constructor(){
 
-        this.params = new GeneratorParams(g_m);
-
-        this._commonVerifier = new CommonVerifier( 'burner', this.params, g_m, g_n);
+        this._commonVerifier = new CommonVerifier( 'burner',  g_m, g_n);
 
     }
 
@@ -76,7 +71,14 @@ class BurnVerifier{
             bn128.serialize(proof.BA),
             bn128.serialize(proof.BS),
         ]));
-        burnAuxiliaries.ys = AdvancedMath.powers(burnAuxiliaries.y, utils.gBurn_m);
+
+        burnAuxiliaries.ys[0] = new BN(1).toRed(bn128.q);
+        burnAuxiliaries.k = new BN(1).toRed(bn128.q);
+        for (let i = 1; i < g_m; i++) {
+            burnAuxiliaries.ys[i] = burnAuxiliaries.ys[i - 1].redMul(burnAuxiliaries.y);
+            burnAuxiliaries.k = burnAuxiliaries.k.redAdd(burnAuxiliaries.ys[i]);
+        }
+
         burnAuxiliaries.z = utils.hash(ABICoder.encodeParameters([
             'bytes32',
         ], [
@@ -87,9 +89,9 @@ class BurnVerifier{
         burnAuxiliaries.zs = [burnAuxiliaries.z.redPow( new BN(2) )];
         burnAuxiliaries.zSum = burnAuxiliaries.zs[0].redMul(burnAuxiliaries.z); // trivial sum
 
-        burnAuxiliaries.k = new FieldVector( burnAuxiliaries.ys ).sum().redMul(burnAuxiliaries.z.redSub(burnAuxiliaries.zs[0])).redSub(burnAuxiliaries.zSum.redMul( new BN( Math.pow(2, utils.gBurn_m) ).toRed(bn128.q) ).redSub(burnAuxiliaries.zSum));
+        burnAuxiliaries.k = burnAuxiliaries.k.redMul(burnAuxiliaries.z.redSub(burnAuxiliaries.zs[0])).redSub(burnAuxiliaries.zSum.redMul( new BN( Math.pow(2, g_m)).toRed(bn128.q)  ).redSub(burnAuxiliaries.zSum));
         burnAuxiliaries.t = proof.tHat.redSub(burnAuxiliaries.k);
-        for (let i = 0; i < utils.gBurn_m; i++) {
+        for (let i = 0; i < g_m; i++) {
             burnAuxiliaries.twoTimesZSquared[i] = burnAuxiliaries.zs[0].redMul( new BN( Math.pow(2, i) ).toRed(bn128.q) );
         }
 
@@ -101,7 +103,6 @@ class BurnVerifier{
             bn128.bytes(burnAuxiliaries.z),
             ...proof.tCommits.getVector().map(bn128.serialize),
         ]));
-
 
         burnAuxiliaries.tEval = proof.tCommits.getVector()[0].mul( burnAuxiliaries.x).add( proof.tCommits.getVector()[1].mul( burnAuxiliaries.x.redMul(burnAuxiliaries.x) )); // replace with "commit"?
 

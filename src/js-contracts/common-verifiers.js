@@ -7,33 +7,24 @@ const InnerProductProof = require('./../prover/schemas/inner-product-proof');
 
 const ABICoder = require('web3-eth-abi');
 
-const G1Point = utils.G1Point;
 const G1Point0 = utils.G1Point0;
 
-const { FieldVector, GeneratorVector } = require('./../prover/algebra.js');
+const IP = require('./../utils/ip');
 
 class CommonVerifiers{
 
-    constructor(type, params, m,n){
+    constructor(type, m,n){
 
-        this.params = params;
         this._n = n;
         this._m = m;
         this._type = type;
     }
 
-    gSumBurn(){
-        return G1Point('0x00715f13ea08d6b51bedcde3599d8e12163e090921309d5aafc9b5bfaadbcda0', '0x27aceab598af7bf3d16ca9d40fe186c489382c21bb9d22b19cb3af8b751b959f');
-    }
-
-    gSumVerify(){
-        return G1Point('0x2257118d30fe5064dda298b2fac15cf96fd51f0e7e3df342d0aed40b8d7bb151', '0x0d4250e7509c99370e6b15ebfe4f1aa5e65a691133357901aa4b0641f96c80a8');
-    }
-
     gSum(){
-        if (this._type === 'burner') return this.gSumBurn();
-        if (this._type === 'verifier') return this.gSumVerify();
+        if (this._type === 'burner') return IP.gSum32();
+        if (this._type === 'verifier') return IP.gSum64();
     }
+
 
     //IDENTICAL
     verify(proof, sigmaAuxiliaries, auxiliaries){
@@ -48,13 +39,15 @@ class CommonVerifiers{
         ]));
         ipAuxiliaries.u_x = utils.g().mul( ipAuxiliaries.o );
 
-        ipAuxiliaries.hPrimes = this.params.hs.map( (it, index) => it.mul( auxiliaries.ys[index].redInvm()  ) ); //hadamardInv
-        ipAuxiliaries.hExp = new FieldVector(auxiliaries.ys).times(  auxiliaries.z ).add( new FieldVector( auxiliaries.twoTimesZSquared ) ).getVector();
-
-        ipAuxiliaries.P = proof.BA.add(  proof.BS.mul( auxiliaries.x )).add( new GeneratorVector(this.params.gs).sum().mul( auxiliaries.z.redNeg()) ).add( new GeneratorVector(ipAuxiliaries.hPrimes).commitPoints( new FieldVector(ipAuxiliaries.hExp) ));
-
-        ipAuxiliaries.P = ipAuxiliaries.P.add( utils.h().mul( proof.mu.redNeg() ));
-        ipAuxiliaries.P = ipAuxiliaries.P.add( ipAuxiliaries.u_x.mul( proof.tHat ));
+        ipAuxiliaries.hPrimes = [];
+        ipAuxiliaries.hPrimeSum = G1Point0();
+        for (let i = 0; i < this._m; i++) {
+            ipAuxiliaries.hPrimes[i] = IP.hs(i).mul( auxiliaries.ys[i].redInvm() );
+            ipAuxiliaries.hPrimeSum = ipAuxiliaries.hPrimeSum.add(ipAuxiliaries.hPrimes[i].mul( auxiliaries.ys[i].mul( auxiliaries.z).add( auxiliaries.twoTimesZSquared[i])));
+        }
+        ipAuxiliaries.P = proof.BA.add(proof.BS.mul( auxiliaries.x)).add( this.gSum().mul( auxiliaries.z.neg())).add(ipAuxiliaries.hPrimeSum);
+        ipAuxiliaries.P = ipAuxiliaries.P.add( utils.h().mul(proof.mu.neg()));
+        ipAuxiliaries.P = ipAuxiliaries.P.add(ipAuxiliaries.u_x.mul(proof.tHat));
 
         // begin inner product verification
         const ipProof = new InnerProductProof( this._type );
@@ -97,7 +90,7 @@ class CommonVerifiers{
         let gTemp = G1Point0();
         let hTemp = G1Point0();
         for (let i = 0; i < this._m; i++) {
-            gTemp = gTemp.add( this.params.gs[i].mul( ipAuxiliaries.otherExponents[i] ) );
+            gTemp = gTemp.add( IP.gs(i).mul( ipAuxiliaries.otherExponents[i] ) );
             hTemp = hTemp.add( ipAuxiliaries.hPrimes[i].mul( ipAuxiliaries.otherExponents[ this._m - 1 - i]));
         }
         const cProof = gTemp.mul( ipProof.a ).add( hTemp.mul( ipProof.b )).add( ipAuxiliaries.u_x.mul( ipProof.a.redMul( ipProof.b )));
