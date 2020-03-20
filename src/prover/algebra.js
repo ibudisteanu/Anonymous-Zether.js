@@ -3,8 +3,6 @@ const utils = require('../utils/utils.js');
 const BN = require('bn.js');
 const EC = require('elliptic')
 
-const BNFieldfromHex = utils.BNFieldfromHex;
-
 class FieldVector {
     constructor(vector) {
 

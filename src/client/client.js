@@ -18,7 +18,7 @@ class Client {
 
         this.account = new Account(this, this._blockchain, this._zsc);
 
-        this._zsc.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
+        this._blockchain.events.on('transferOccurred', this.onReceivedTransfer.bind(this) );
 
     }
 
@@ -76,25 +76,25 @@ class Client {
                 if (  b2.lte(bn128.B_MAX_BN) && b.gte(bn128.B_MAX_BN) ){
 
                     //sender
-                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b2, type: "sender"  } );
+                    this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b2, type: "sender"  } );
 
                     const value = this._zsc.readBalance( C[i], D, this.account.keypair.x, true );
                     if (value > 0) {
                         console.log("Transfer of " + value + " sent! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
-                        this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "sender"  } );
+                        this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "sender"  } );
                     } else throw "Sender couldn't decode";
 
 
                 } else if (  b.lte(bn128.B_MAX_BN) && b2.gte(bn128.B_MAX_BN) ){
 
                     //receiver
-                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b, type: "receiver"  } );
+                    this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b, type: "receiver"  } );
 
                     const value = this._zsc.readBalance( C[i], D, this.account.keypair.x );
                     if (value > 0) {
                         this.account._state.pending += value;
                         console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
-                        this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "receiver"  } );
+                        this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "receiver"  } );
                     } else throw "Receiver couldn't decode";
 
                 }
@@ -108,13 +108,13 @@ class Client {
                 if (value1 > 0) {
 
                     //sender
-                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value1, type: "sender"  } );
+                    this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value1, type: "sender"  } );
 
                 }
                 if (value2 > 0){
 
                     //receiver
-                    this._zsc.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value2, type: "receiver"  } );
+                    this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value2, type: "receiver"  } );
 
                 }
 
@@ -271,7 +271,7 @@ class Client {
             account._state.nonceUsed = true;
             account._state.pending -= value;
 
-            this._zsc.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, v2, proof }} );
+            this._blockchain.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, v2, proof }} );
 
             console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 

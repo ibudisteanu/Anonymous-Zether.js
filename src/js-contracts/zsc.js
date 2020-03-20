@@ -11,8 +11,6 @@ const MAX = 4294967295; // 2^32 - 1 // no sload for constants...!
 const ZVerifier = require("./zverifier");
 const BurnerVerifier = require("./burnerverifier");
 
-const EventEmitter = require('events').EventEmitter;
-
 class ZSC{
 
     constructor( blockchain, address = '0x5d6c4ebf1b789883b58b0d7a7fe937e275212960' ) {
@@ -34,7 +32,6 @@ class ZSC{
 
         this.lastGlobalUpdate = 0;
 
-        this.events = new EventEmitter();
 
     }
 
@@ -44,7 +41,7 @@ class ZSC{
         hash = utils.fromHex( hash );
 
         if (this._acc[ hash ]) return [...this._acc[ hash ]];
-        else return [ G1Point0(), G1Point0() ];
+        return [ G1Point0(), G1Point0() ];
 
     }
 
@@ -65,26 +62,19 @@ class ZSC{
         hash = utils.fromHex( hash );
 
         if (this._pending[ hash ]) return [...this._pending[ hash ] ];
-        else return [G1Point0(), G1Point0() ];
+        return [G1Point0(), G1Point0() ];
 
     }
 
-    _setPending(hash, value, index){
+    _setPending(hash, value){
 
         hash = utils.fromHex(hash);
 
-        if (index === undefined) {
+        if (!value[0].validate()) throw "Acc0 is invalid";
+        if (!value[1].validate()) throw "Acc1 is invalid";
 
-            for (let i=0; i < 2; i++)
-                if (!value[i].validate() ) throw "value is invalid";
+        this._pending[ hash ] = [...value];
 
-            this._pending[ hash ] = [...value];
-        }
-        else {
-
-            if ( !value.validate() ) throw "value is invalid";
-            this._pending[ hash ][index] = value;
-        }
     }
 
     //if not found, returns 0
@@ -150,10 +140,10 @@ class ZSC{
 
         if (  bTransfer > MAX || bTransfer < 0 )throw "Deposit amount out of range."; // uint, so other way not necessary?
 
-        let scratch = this._getPending(yHash)[0];
-        scratch = scratch.add( utils.g().mul(bTransfer) );
+        let scratch = this._getPending(yHash);
+        scratch[0] = scratch[0].add( utils.g().mul(bTransfer) );
 
-        this._setPending( yHash, scratch, 0  );
+        this._setPending( yHash, scratch );
 
         return true;
     }
@@ -244,8 +234,7 @@ class ZSC{
 
     _rollOver( yHash ){
 
-        let e = this._blockchain.getEpoch();
-        console.log("rollOver epoch", e);
+        const e = this._getEpoch();
 
         if (this._getLastRollOver(yHash) < e) {
 
@@ -262,7 +251,6 @@ class ZSC{
 
         if (this.lastGlobalUpdate < e){
 
-            console.log("this.lastGlobalUpdate = e", this.lastGlobalUpdate, "=> ", e);
             this.lastGlobalUpdate = e;
             this._nonceSet = {};
 
@@ -351,10 +339,11 @@ class ZSC{
 
     }
 
+    _getEpoch(){
+        return this._blockchain.getEpoch()
+    }
+
 }
 
 
 module.exports = ZSC;
-
-
-
