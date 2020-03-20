@@ -31,7 +31,7 @@ class Client {
 
             var [c, s] = utils.sign( this._zsc.address, this.account.keypair);
 
-            this._zsc.register( this.account.keypair.y , c, s);
+            await this._zsc.register( this.account.keypair.y , c, s);
 
         } else {
 
@@ -229,7 +229,7 @@ class Client {
             index[1] = index[1] + (index[1] % 2 === 0 ? 1 : -1);
         } // make sure you and your friend have opposite parity
 
-        const result = this._zsc.simulateAccounts(y, this._blockchain.getEpoch() );
+        const result = await this._zsc.simulateAccounts(y, this._blockchain.getEpoch() );
 
         const unserialized = result.map(account => account );
 
@@ -312,7 +312,7 @@ class Client {
             return utils.sleep(wait).then(() => this.withdraw(value));
         }
 
-        let result = this._zsc.simulateAccounts( [account.keypair.y], this._blockchain.getEpoch() );
+        let result = await this._zsc.simulateAccounts( [account.keypair.y], this._blockchain.getEpoch() );
 
         const simulated = result[0];
         const CLn = simulated[0].add(bn128.curve.g.mul(new BN(-value)));

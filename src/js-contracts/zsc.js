@@ -36,7 +36,7 @@ class ZSC{
     }
 
     //if not found returns G1Point[2] with empty points
-    _getAccMap(hash){
+    async _getAccMap(hash){
 
         hash = utils.fromHex( hash );
 
@@ -45,7 +45,7 @@ class ZSC{
 
     }
 
-    _setAccMap(hash, value){
+    async _setAccMap(hash, value){
 
         hash = utils.fromHex(hash);
 
@@ -57,7 +57,7 @@ class ZSC{
     }
 
     //if not found returns G1Point[2] with empty points
-    _getPending(hash){
+    async _getPending(hash){
 
         hash = utils.fromHex( hash );
 
@@ -66,7 +66,7 @@ class ZSC{
 
     }
 
-    _setPending(hash, value){
+    async _setPending(hash, value){
 
         hash = utils.fromHex(hash);
 
@@ -78,7 +78,7 @@ class ZSC{
     }
 
     //if not found, returns 0
-    _getLastRollOver(hash){
+    async _getLastRollOver(hash){
 
         let out = this._lastRollOver[ utils.fromHex( hash ) ];
         if (!out) out = 0;
@@ -86,14 +86,14 @@ class ZSC{
         return out;
     }
 
-    _setLastRollOver(hash, value){
+    async _setLastRollOver(hash, value){
         this._lastRollOver[ utils.fromHex(hash) ] = value;
     }
 
-    registered(yHash){
+    async registered(yHash){
 
-        const acc = this._getAccMap(yHash);
-        const pending = this._getPending(yHash);
+        const acc = await this._getAccMap(yHash);
+        const pending = await this._getPending(yHash);
 
         const zero = utils.G1Point0();
 
@@ -102,7 +102,7 @@ class ZSC{
         return !( scratch[0][0].eq(zero) && scratch[0][1].eq(zero) && scratch[1][0].eq(zero) && scratch[1][1].eq(zero) );
     }
 
-    register(y, c,  s){
+    async register(y, c,  s){
 
         const K = utils.g().mul( s ).add(y.mul(c.neg() ));
         if (!K.validate() ) throw "K is invalid";
@@ -121,9 +121,9 @@ class ZSC{
             throw new Error('Invalid registration signature!');
 
         const yHash = utils.keccak256( utils.encodedPackaged( bn128.serialize(y) ) );
-        if ( this.registered(yHash) ) throw "Account already registered!";
+        if ( await this.registered(yHash) ) throw "Account already registered!";
 
-        this._setPending(yHash, [ y, utils.g() ] );
+        await this._setPending(yHash, [ y, utils.g() ] );
 
         return {
             challenge,
@@ -131,24 +131,24 @@ class ZSC{
         }
     }
 
-    fund( y, bTransfer){
+    async fund( y, bTransfer){
 
         const yHash = utils.keccak256( utils.encodedPackaged( bn128.serialize(y) ) );
-        if (!this.registered(yHash)) throw new Error("Account not yet registered.");
+        if ( await this.registered(yHash) === false) throw new Error("Account not yet registered.");
 
-        this._rollOver( yHash );
+        await this._rollOver( yHash );
 
         if (  bTransfer > MAX || bTransfer < 0 )throw "Deposit amount out of range."; // uint, so other way not necessary?
 
-        let scratch = this._getPending(yHash);
+        let scratch = await this._getPending(yHash);
         scratch[0] = scratch[0].add( utils.g().mul(bTransfer) );
 
-        this._setPending( yHash, scratch );
+        await this._setPending( yHash, scratch );
 
         return true;
     }
 
-    simulateAccounts(y, epoch) {
+    async simulateAccounts(y, epoch) {
 
         // in this function and others, i have to use public + memory (and hence, a superfluous copy from calldata)
         // only because calldata structs aren't yet supported by solidity. revisit this in the future.
@@ -161,11 +161,11 @@ class ZSC{
 
             const yHash = utils.keccak256( utils.encodedPackaged( bn128.serialize(y[i]) ) );
 
-            accounts[i] = this._getAccMap(yHash);
+            accounts[i] = await this._getAccMap(yHash);
 
-            if (this._getLastRollOver(yHash) < epoch) {
+            if (await this._getLastRollOver(yHash) < epoch) {
 
-                const scratch = this._getPending(yHash );
+                const scratch = await this._getPending(yHash );
                 accounts[i][0] = accounts[i][0].add( scratch[0] );
                 accounts[i][1] = accounts[i][1].add( scratch[1] );
 
@@ -182,7 +182,7 @@ class ZSC{
 
 
     //Transfer is verified
-    transfer(  C, D, y, u, proof){
+    async transfer(  C, D, y, u, proof){
 
         let size = y.length;
         if (C.length !== size) throw "Input array length mismatch!";
@@ -192,18 +192,18 @@ class ZSC{
         for (let i=0; i < size; i++) {
 
             const yHash = utils.keccak256(utils.encodedPackaged( bn128.serialize(y[i]) ));
-            if (!this.registered(yHash)) throw new Error("Account not yet registered.");
+            if ( await this.registered(yHash) === false) throw new Error("Account not yet registered.");
 
-            this._rollOver( yHash);
+            await this._rollOver( yHash);
 
-            let scratch = this._getPending(yHash);
+            let scratch = await this._getPending(yHash);
             const pending = [];
             pending[0] = scratch[0].add( C[i] );
             pending[1] = scratch[1].add( D );
 
-            this._setPending( yHash, pending ); // credit / debit / neither y's account.
+            await this._setPending( yHash, pending ); // credit / debit / neither y's account.
 
-            scratch = this._getAccMap(yHash);
+            scratch = await this._getAccMap(yHash);
             CLn[i] = scratch[0].add( C[i] );
             CRn[i] = scratch[1].add( D );
 
@@ -221,31 +221,31 @@ class ZSC{
         // scratch[0] = scratch[0].add( out1 );
         // this._setPending( consts.MINER_HASH, scratch );
 
-        const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
+        const uHash = utils.fromHex( utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ) ); // NO modulo
 
-        if (this._nonceSet[ utils.fromHex( uHash ) ]) throw "Nonce already seen!";
+        if (this._nonceSet[  uHash ]) throw "Nonce already seen!";
 
-        this._nonceSet[ utils.fromHex( uHash ) ] = true;
+        this._nonceSet[ uHash ] = true;
 
         if ( !ZVerifier.verifyTransfer(CLn, CRn, C, D, y, this.lastGlobalUpdate, u, proof) ) throw "Transfer proof verification failed!";
 
         return [ C, D, y, u, proof ];
     }
 
-    _rollOver( yHash ){
+    async _rollOver( yHash ){
 
         const e = this._getEpoch();
 
-        if (this._getLastRollOver(yHash) < e) {
+        if ( await this._getLastRollOver(yHash) < e) {
 
-            const scratch = [ this._getAccMap(yHash), this._getPending(yHash) ];
+            const scratch = [ await this._getAccMap(yHash), await this._getPending(yHash) ];
 
             const out1 = scratch[0][0].add( scratch[1][0] );
             const out2 = scratch[0][1].add( scratch[1][1] );
 
-            this._setAccMap(yHash, [ out1, out2 ] );
-            this._setPending(yHash, [ utils.G1Point0(), utils.G1Point0() ] );
-            this._setLastRollOver(yHash, e);
+            await this._setAccMap(yHash, [ out1, out2 ] );
+            await this._setPending(yHash, [ utils.G1Point0(), utils.G1Point0() ] );
+            await this._setLastRollOver(yHash, e);
 
         }
 
@@ -260,27 +260,27 @@ class ZSC{
     }
 
 
-    burn ( y, bTransfer, u, proof, sender){
+    async burn ( y, bTransfer, u, proof, sender){
 
         const yHash = utils.keccak256(utils.encodedPackaged( bn128.serialize(y) ));
-        if (!this.registered(yHash)) throw new Error("Account not yet registered.");
+        if ( await this.registered(yHash) === false) throw new Error("Account not yet registered.");
 
-        this._rollOver( yHash );
+        await this._rollOver( yHash );
 
         if ( bTransfer < 0 || bTransfer > MAX) throw "Transfer amount out of range";
 
-        let pending = this._getPending(yHash); // could technically use sload, but... let's not go there.
+        let pending = await this._getPending(yHash); // could technically use sload, but... let's not go there.
         pending[0] = pending[0].add( utils.g().mul( new BN(bTransfer).toRed(bn128.q).neg()) );
-        this._setPending(yHash, pending);  // debit y's balance
+        await this._setPending(yHash, pending);  // debit y's balance
 
-        const scratch = this._getAccMap(yHash); // simulate debit of acc---just for use in verification, won't be applied
+        const scratch = await this._getAccMap(yHash); // simulate debit of acc---just for use in verification, won't be applied
         scratch[0] = scratch[0].add( utils.g().mul( new BN(bTransfer).toRed(bn128.q).neg()) );
 
-        const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
+        const uHash = utils.fromHex( utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ) ); // NO modulo
 
-        if (this._nonceSet[ utils.fromHex( uHash ) ]) throw "Nonce already seen!";
+        if (this._nonceSet[  uHash ]) throw "Nonce already seen!";
 
-        this._nonceSet[ utils.fromHex( uHash ) ] = true;
+        this._nonceSet[ uHash ] = true;
 
         if ( !BurnerVerifier.verifyBurn( scratch[0], scratch[1], y,  this.lastGlobalUpdate, u, sender, proof) ) throw "Burn proof verification failed!";
 
