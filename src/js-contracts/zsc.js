@@ -30,8 +30,14 @@ class ZSC{
 
         this._nonceSet = {};
 
-        this.lastGlobalUpdate = 0;
+        this._lastGlobalUpdate = 0;
 
+
+    }
+
+    async _deleteAccMap(hash){
+
+        delete this._acc[ utils.fromHex( hash ) ];
 
     }
 
@@ -47,12 +53,16 @@ class ZSC{
 
     async _setAccMap(hash, value){
 
-        hash = utils.fromHex(hash);
-
         if (!value[0].validate()) throw "Acc0 is invalid";
         if (!value[1].validate()) throw "Acc1 is invalid";
 
-        this._acc[hash] = [...value];
+        this._acc[utils.fromHex(hash)] = [...value];
+
+    }
+
+    async _deletePending(hash){
+
+        delete this._pending[ utils.fromHex( hash ) ];
 
     }
 
@@ -68,12 +78,10 @@ class ZSC{
 
     async _setPending(hash, value){
 
-        hash = utils.fromHex(hash);
-
         if (!value[0].validate()) throw "Acc0 is invalid";
         if (!value[1].validate()) throw "Acc1 is invalid";
 
-        this._pending[ hash ] = [...value];
+        this._pending[ utils.fromHex(hash) ] = [...value];
 
     }
 
@@ -81,13 +89,36 @@ class ZSC{
     async _getLastRollOver(hash){
 
         let out = this._lastRollOver[ utils.fromHex( hash ) ];
-        if (!out) out = 0;
 
-        return out;
+        return out || 0;
     }
 
     async _setLastRollOver(hash, value){
         this._lastRollOver[ utils.fromHex(hash) ] = value;
+    }
+
+    _getNonceSetAll(){
+        return this._nonceSet;
+    }
+
+    _getNonceSet(uHash){
+        return this._nonceSet[utils.fromHex(uHash)];
+    }
+
+    _setNonceSet(uHash){
+        this._nonceSet[utils.fromHex(uHash)] = true;
+    }
+
+    _clearNonceSet(){
+        this._nonceSet = {};
+    }
+
+    _setLastGlobalUpdate(value){
+        this._lastGlobalUpdate = value;
+    }
+
+    _getLastGlobalUpdate(){
+        return this._lastGlobalUpdate;
     }
 
     async registered(yHash){
@@ -221,13 +252,12 @@ class ZSC{
         // scratch[0] = scratch[0].add( out1 );
         // this._setPending( consts.MINER_HASH, scratch );
 
-        const uHash = utils.fromHex( utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ) ); // NO modulo
+        const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
 
-        if (this._nonceSet[  uHash ]) throw "Nonce already seen!";
+        if ( this._getNonceSet(uHash) ) throw "Nonce already seen!";
+        this._setNonceSet(uHash);
 
-        this._nonceSet[ uHash ] = true;
-
-        if ( !ZVerifier.verifyTransfer(CLn, CRn, C, D, y, this.lastGlobalUpdate, u, proof) ) throw "Transfer proof verification failed!";
+        if ( !ZVerifier.verifyTransfer(CLn, CRn, C, D, y, this._getLastGlobalUpdate(), u, proof) ) throw "Transfer proof verification failed!";
 
         return [ C, D, y, u, proof ];
     }
@@ -249,10 +279,10 @@ class ZSC{
 
         }
 
-        if (this.lastGlobalUpdate < e){
+        if (this._getLastGlobalUpdate() < e){
 
-            this.lastGlobalUpdate = e;
-            this._nonceSet = {};
+            this._setLastGlobalUpdate(e);
+            await this._clearNonceSet();
 
         }
 
@@ -278,11 +308,10 @@ class ZSC{
 
         const uHash = utils.fromHex( utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ) ); // NO modulo
 
-        if (this._nonceSet[  uHash ]) throw "Nonce already seen!";
+        if ( this._getNonceSet(uHash) ) throw "Nonce already seen!";
+         this._setNonceSet(uHash);
 
-        this._nonceSet[ uHash ] = true;
-
-        if ( !BurnerVerifier.verifyBurn( scratch[0], scratch[1], y,  this.lastGlobalUpdate, u, sender, proof) ) throw "Burn proof verification failed!";
+        if ( !BurnerVerifier.verifyBurn( scratch[0], scratch[1], y,  this._getLastGlobalUpdate(), u, sender, proof) ) throw "Burn proof verification failed!";
 
         return true;
     }
