@@ -25,7 +25,7 @@ class ZVerifier{
 
     }
 
-    verifyTransfer(CLn, CRn, C, D, y, epoch, u, proof){
+    verifyTransfer(CLn, CRn, C, D, y, epoch, u, proof, fee){
 
         const statement = new ZetherStatement();
         statement.CLn = CLn; // do i need to allocate / set size?!
@@ -40,10 +40,10 @@ class ZVerifier{
         const zetherProof = new ZetherProof();
         zetherProof.unserialize(proof);
 
-        return this.verify(statement, zetherProof);
+        return this.verify(statement, zetherProof, fee);
     }
 
-    verify(statement, proof){
+    verify(statement, proof, fee){
 
         var statementHash = utils.hash(ABICoder.encodeParameters([
             'bytes32[2][]',
@@ -179,6 +179,8 @@ class ZVerifier{
         anonAuxiliaries.DR = anonAuxiliaries.DR.add( statement.D.mul( anonAuxiliaries.wPow));
         anonAuxiliaries.gR = anonAuxiliaries.gR.add( utils.g().mul( anonAuxiliaries.wPow));
 
+        anonAuxiliaries.C_XR = anonAuxiliaries.C_XR.add(utils.g().mul( fee.mul(anonAuxiliaries.wPow)));
+
         const zetherAuxiliaries = new ZetherAuxiliaries();
 
 
@@ -232,7 +234,8 @@ class ZVerifier{
         sigmaAuxiliaries.A_D = utils.g().mul( proof.s_r ).add( statement.D.mul( proof.c.redNeg()));
 
 
-        sigmaAuxiliaries.A_b = utils.g().mul(proof.s_b).add(anonAuxiliaries.DR.mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CRnR.mul(zetherAuxiliaries.zs[1])).mul(proof.s_sk).add(anonAuxiliaries.CR[0][0].mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CLnR.mul(zetherAuxiliaries.zs[1])).mul(proof.c.neg())));
+        sigmaAuxiliaries.A_b = utils.g().mul(proof.s_b).add(anonAuxiliaries.DR.mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CRnR.mul(zetherAuxiliaries.zs[1])).mul(proof.s_sk).add(anonAuxiliaries.CR[0][0].add(utils.g().mul(fee.mul(anonAuxiliaries.wPow))).mul(zetherAuxiliaries.zs[0].neg()).add(anonAuxiliaries.CLnR.mul(zetherAuxiliaries.zs[1])).mul(proof.c.neg())));
+
         sigmaAuxiliaries.A_X = anonAuxiliaries.y_XR.mul(proof.s_r).add(anonAuxiliaries.C_XR.mul(proof.c.neg()));
         sigmaAuxiliaries.A_t = utils.g().mul(zetherAuxiliaries.t).add(zetherAuxiliaries.tEval.neg()).mul(proof.c.mul(anonAuxiliaries.wPow)).add(utils.h().mul(proof.s_tau)).add(utils.g().mul(proof.s_b.neg()));
 

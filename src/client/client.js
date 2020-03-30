@@ -4,7 +4,7 @@ const utils = require('../utils/utils.js');
 const bn128 = require('../utils/bn128.js');
 
 const Account = require('./account');
-const Service = require('./../utils/service')
+const Service = require('./../utils/service');
 
 class Client {
 
@@ -159,7 +159,7 @@ class Client {
         // the 20-millisecond buffer is designed to give the callback time to fire (see below).
     }
 
-    async transfer ( destinationPublicKey, value, decoys = []) {
+    async transfer ( destinationPublicKey, value, fee, decoys = []) {
 
 
         if ( !this.account.keypair )
@@ -168,12 +168,12 @@ class Client {
         const account = this.account;
         const state = account._simulate();
         if (value > state.available + state.pending)
-            throw "Requested transfer amount of " + value + " exceeds account balance of " + (state.available + state.pending) + ".";
+            throw "Requested transfer amount of " + value + " (plus fee of " + fee + ") exceeds account balance of " + (state.available + state.pending) + ".";
 
         const wait = this._blockchain.away();
         const seconds = Math.ceil(wait / 1000);
 
-        if (value > state.available) {
+        if (value + fee > state.available) {
             console.log("Your transfer has been queued. Please wait " + seconds + " second, for the release of your funds...");
             return utils.sleep(wait).then(() => this.transfer(name, value, decoys));
         }
@@ -237,26 +237,26 @@ class Client {
             throw new Error("Please make sure all parties (including decoys) are registered."); // todo: better error message, i.e., which friend?
 
         const r = bn128.randomScalar();
-        let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN(-value) : i === index[1] ? new BN(value ) : new BN(0)).add( party.mul(r)));
+        let C = y.map((party, i) => bn128.curve.g.mul(i === index[0] ? new BN( -value - fee ) : i === index[1] ? new BN(value ) : new BN(0)).add( party.mul(r)));
 
         let D = bn128.curve.g.mul(r);
         let CLn = unserialized.map((account, i) =>  account[0].add( C[i] ));
         let CRn = unserialized.map((account) => account[1].add( D ));
 
-        const proof = Service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, state.available - value, index);
+        const proof = Service.proveTransfer( CLn, CRn, C, D, y, state.lastRollOver, account.keypair.x, r, value, fee, state.available - value - fee, index);
         const u = utils.u(state.lastRollOver, account.keypair.x);
 
         //whisper the value to the receiver
         let v = utils.hash( bn128.representation( y[ index[1] ].mul( r )  ));
         v = v.redAdd( new BN(value).toRed(bn128.q) );
 
-        //whisper the value to the receiver
+        //whisper the value to the sender
         let v2 = utils.hash( bn128.representation( D.mul(  account.keypair.x ) ) );
-        v2 = v2.redAdd( new BN(value).toRed(bn128.q) );
+        v2 = v2.redAdd( new BN(value ).toRed(bn128.q) );
 
         const tx = this._blockchain.createTransaction();
         tx.onValidation = ({block, tx})=> {
-            return this._zsc.transfer(  C, D, y, u, proof);
+            return this._zsc.transfer(  C, D, y, u, proof, fee );
         };
 
 
@@ -269,14 +269,14 @@ class Client {
 
             account._state = account._simulate(); // have to freshly call it
             account._state.nonceUsed = true;
-            account._state.pending -= value;
+            account._state.pending -= value + fee;
 
             this._blockchain.events.emit('transferOccurred', { tx, block, params: { C, D, y, u, v, v2, proof }} );
 
-            console.log("Transfer of " + value + " was successful. Balance now " + (account._state.available + account._state.pending) + ".");
+            console.log("Transfer of " + value + " (with fee of " + fee + ") was successful. Balance now " + (account._state.available + account._state.pending) + ".");
 
             const proof2 = this._zsc.proveAmountSender(y, index[0], r);
-            this._zsc.verifyAmountSender(value, index[0], y, C, D, proof2);
+            this._zsc.verifyAmountSender(value+fee, index[0], y, C, D, proof2);
 
             this._blockchain.incrementEpoch();
         };

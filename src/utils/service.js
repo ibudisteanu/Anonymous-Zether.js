@@ -9,9 +9,9 @@ class Service {
         this.burn = new BurnProver();
     }
 
-    proveTransfer (CLn, CRn, C, D, y, epoch, sk, r, bTransfer, bDiff, index) {
+    proveTransfer (CLn, CRn, C, D, y, epoch, sk, r, bTransfer, bFee, bDiff, index) {
 
-        var statement = {
+        const statement = {
             CLn,
             CRn,
             C,
@@ -20,10 +20,11 @@ class Service {
             epoch,
         };
 
-        var witness = {
+        const witness = {
             sk,
             r,
             bTransfer,
+            bFee,
             bDiff,
             index
         };
@@ -33,7 +34,8 @@ class Service {
 
 
     proveBurn (CLn, CRn, y, epoch, sender, sk, bDiff) {
-        var statement = {
+
+        const statement = {
             CLn,
             CRn,
             y,
@@ -41,7 +43,7 @@ class Service {
             sender,
         };
 
-        var witness = {
+        const witness = {
             sk,
             bDiff,
         };

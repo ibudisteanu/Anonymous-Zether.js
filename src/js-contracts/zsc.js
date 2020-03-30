@@ -10,6 +10,7 @@ const MAX = 4294967295; // 2^32 - 1 // no sload for constants...!
 
 const ZVerifier = require("./zverifier");
 const BurnerVerifier = require("./burnerverifier");
+const consts = require("./../consts");
 
 class ZSC{
 
@@ -97,6 +98,7 @@ class ZSC{
         this._lastRollOver[ utils.fromHex(hash) ] = value;
     }
 
+
     _getNonceSetAll(){
         return this._nonceSet;
     }
@@ -119,6 +121,10 @@ class ZSC{
 
     _getLastGlobalUpdate(){
         return this._lastGlobalUpdate;
+    }
+
+    _getMinerHash(){
+        return consts.MINER_HASH;
     }
 
     async registered(yHash){
@@ -213,7 +219,10 @@ class ZSC{
 
 
     //Transfer is verified
-    async transfer(  C, D, y, u, proof){
+    async transfer(  C, D, y, u, proof, fee = 0){
+
+        if (fee < 0) throw "Fee needs to be positive";
+        fee = new BN(fee).toRed(bn128.q);
 
         let size = y.length;
         if (C.length !== size) throw "Input array length mismatch!";
@@ -243,21 +252,21 @@ class ZSC{
         /**
          * MINER FEE
          */
+        if ( fee.gt(0) ) {
+            const minerHash = this._getMinerHash();
+            await this._rollOver(minerHash);
+            const scratch = await this._getPending(minerHash);
 
-        // this._rollOver( consts.MINER_HASH);
-        // const scratch = this._getPending( consts.MINER_HASH );
-        //
-        // const out1 = utils.g().mul( consts.FEE_BN );
-        //
-        // scratch[0] = scratch[0].add( out1 );
-        // this._setPending( consts.MINER_HASH, scratch );
+            scratch[0] = scratch[0].add( utils.g().mul( fee ) );
+            await this._setPending( minerHash, scratch);
+        }
 
         const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
 
         if ( this._getNonceSet(uHash) ) throw "Nonce already seen!";
         this._setNonceSet(uHash);
 
-        if ( !ZVerifier.verifyTransfer(CLn, CRn, C, D, y, this._getLastGlobalUpdate(), u, proof) ) throw "Transfer proof verification failed!";
+        if ( !ZVerifier.verifyTransfer(CLn, CRn, C, D, y, this._getLastGlobalUpdate(), u, proof, fee) ) throw "Transfer proof verification failed!";
 
         return [ C, D, y, u, proof ];
     }

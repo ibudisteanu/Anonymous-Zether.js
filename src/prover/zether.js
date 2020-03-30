@@ -62,8 +62,9 @@ class ZetherProver {
         statement.CRn = new GeneratorVector(statement.CRn);
         statement.C = new GeneratorVector(statement.C);
         statement.y = new GeneratorVector(statement.y);
-        witness['bTransfer'] = new BN(witness['bTransfer']).toRed(bn128.q);
-        witness['bDiff'] = new BN(witness['bDiff']).toRed(bn128.q);
+        witness.bTransfer = new BN( witness.bTransfer).toRed(bn128.q);
+        witness.bFee = new BN(witness.bFee).toRed(bn128.q);
+        witness.bDiff = new BN(witness.bDiff).toRed(bn128.q);
 
         var number = witness['bTransfer'].add(witness['bDiff'].shln(32)); // shln a red? check
         var aL = new FieldVector(number.toString(2, 64).split("").reverse().map((i) => new BN(i, 2).toRed(bn128.q)));
@@ -141,10 +142,10 @@ class ZetherProver {
         proof.y_XG = Array.from({ length: m }).map((_, k) => this.params.getG().mul(omega[k]));
         var vPow = new BN(1).toRed(bn128.q);
         for (var i = 0; i < N; i++) { // could turn this into a complicated reduce, but...
-            var temp = this.params.getG().mul(witness['bTransfer'].redMul(vPow));
+            var temp = this.params.getG().mul(vPow);
             var poly = i % 2 ? Q : P; // clunky, i know, etc. etc.
 
-            proof.C_XG = proof.C_XG.map((C_XG_k, k) => C_XG_k.add(temp.mul(poly[k].getVector()[(witness['index'][0] + N - (i - i % 2)) % N].redNeg().redAdd(poly[k].getVector()[(witness['index'][1] + N - (i - i % 2)) % N]))));
+            proof.C_XG = proof.C_XG.map((C_XG_k, k) => C_XG_k.add(temp.mul(witness['bTransfer'].redNeg().redSub( witness.bFee ).redMul(poly[k].getVector()[(witness['index'][0] + N - (i - i % 2)) % N]).redAdd(witness['bTransfer'].redMul(poly[k].getVector()[(witness['index'][1] + N - (i - i % 2)) % N])))));
 
             if (i != 0)
                 vPow = vPow.redMul(v);
