@@ -69,20 +69,12 @@ class ZVerifier{
             'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
         ], [
             bn128.bytes(statementHash),
             bn128.serialize( proof.BA ),
             bn128.serialize( proof.BS ),
             bn128.serialize( proof.A ),
             bn128.serialize( proof.B ),
-            bn128.serialize( proof.C ),
-            bn128.serialize( proof.D ),
-            bn128.serialize( proof.E ),
-            bn128.serialize( proof.F ),
         ]));
 
         anonAuxiliaries.w = utils.hash(ABICoder.encodeParameters([
@@ -123,22 +115,13 @@ class ZVerifier{
         anonAuxiliaries.temp = G1Point0();
 
 
-        for (let k=0; k < 2 * anonAuxiliaries.m; k++)
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add(  IP.gs(k).mul( anonAuxiliaries.f[k][1]) ) ;
-
+        for (let k=0; k < 2 * anonAuxiliaries.m; k++) {
+            anonAuxiliaries.temp = anonAuxiliaries.temp.add(IP.gs(k).mul(anonAuxiliaries.f[k][1]));
+            anonAuxiliaries.temp = anonAuxiliaries.temp.add(IP.gs(k + 2 * anonAuxiliaries.m).mul(anonAuxiliaries.f[k][1].mul(anonAuxiliaries.w.sub(anonAuxiliaries.f[k][1]))));
+        }
+        anonAuxiliaries.temp = anonAuxiliaries.temp.add(IP.gs(4 * anonAuxiliaries.m).mul(anonAuxiliaries.f[0][1].mul(anonAuxiliaries.f[anonAuxiliaries.m][1])).add(IP.gs(1 + 4 * anonAuxiliaries.m).mul(anonAuxiliaries.f[0][0].mul(anonAuxiliaries.f[anonAuxiliaries.m][0]))));
         if (proof.B.mul(anonAuxiliaries.w).add(proof.A).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_A ) ) ) === false) throw "Recovery failure for B^w * A.";
 
-
-        anonAuxiliaries.temp = G1Point0();
-        for (let k = 0; k < 2 * anonAuxiliaries.m; k++)
-            anonAuxiliaries.temp = anonAuxiliaries.temp.add( (IP.gs(k).mul( anonAuxiliaries.f[k][1].redMul( anonAuxiliaries.w.redSub( anonAuxiliaries.f[k][1])))) );
-
-
-        if ( proof.C.mul(anonAuxiliaries.w).add(proof.D).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_C ) ) )  === false ) throw "Recovery failure for C^w * D.";
-
-        anonAuxiliaries.temp = IP.gs(0).mul( anonAuxiliaries.f[0][1].redMul(anonAuxiliaries.f[anonAuxiliaries.m][1])).add( IP.gs(1).mul( anonAuxiliaries.f[0][0].redMul(anonAuxiliaries.f[anonAuxiliaries.m][0])));
-
-        if ( proof.F.mul( anonAuxiliaries.w ).add( proof.E ).eq( anonAuxiliaries.temp.add( utils.h().mul(  proof.z_E )  ) ) === false ) throw "Recovery failure for F^w * E";
 
         anonAuxiliaries.r = this.assemblePolynomials(anonAuxiliaries.f);
 

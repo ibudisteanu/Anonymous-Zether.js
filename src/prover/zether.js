@@ -83,27 +83,18 @@ class ZetherProver {
         // DON'T need to extend the params anymore. 64 will always be enough.
         var r_A = bn128.randomScalar();
         var r_B = bn128.randomScalar();
-        var r_C = bn128.randomScalar();
-        var r_D = bn128.randomScalar();
-        var r_E = bn128.randomScalar();
-        var r_F = bn128.randomScalar();
         var a = new FieldVector(Array.from({ length: 2 * m }).map(bn128.randomScalar));
         var b = new FieldVector((new BN(witness['index'][1]).toString(2, m) + new BN(witness['index'][0]).toString(2, m)).split("").reverse().map((i) => new BN(i, 2).toRed(bn128.q)));
         var c = a.hadamard(b.times(new BN(2).toRed(bn128.q)).negate().plus(new BN(1).toRed(bn128.q))); // check this
         var d = a.hadamard(a).negate();
-        proof.A = this.params.commit(r_A, a);
-        proof.B = this.params.commit(r_B, b);
-        proof.C = this.params.commit(r_C, c);
-        proof.D = this.params.commit(r_D, d);
-        proof.E = this.params.commit(r_E, new FieldVector([a.getVector()[0].redMul(a.getVector()[m]), a.getVector()[0].redMul(a.getVector()[m])]));
-        proof.F = this.params.commit(r_F, new FieldVector([a.getVector()[b.getVector()[0].toNumber() * m], a.getVector()[b.getVector()[m].toNumber() * m].redNeg()]));
+        var e = new FieldVector([a.getVector()[0].redMul(a.getVector()[m]), a.getVector()[0].redMul(a.getVector()[m])]);
+        var f = new FieldVector([a.getVector()[b.getVector()[0].toNumber() * m], a.getVector()[b.getVector()[m].toNumber() * m].redNeg()]);
+
+        proof.A = this.params.commit(r_A, a.concat(d).concat(e));
+        proof.B = this.params.commit(r_B, b.concat(c).concat(f));
 
         var v = utils.hash(ABICoder.encodeParameters([
             'bytes32',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
-            'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
             'bytes32[2]',
@@ -114,10 +105,6 @@ class ZetherProver {
             bn128.serialize(proof.BS),
             bn128.serialize(proof.A),
             bn128.serialize(proof.B),
-            bn128.serialize(proof.C),
-            bn128.serialize(proof.D),
-            bn128.serialize(proof.E),
-            bn128.serialize(proof.F),
         ]));
 
         var phi = Array.from({ length: m }).map(bn128.randomScalar);
@@ -175,8 +162,6 @@ class ZetherProver {
 
         proof.f = b.times(w).add(a);
         proof.z_A = r_B.redMul(w).redAdd(r_A);
-        proof.z_C = r_C.redMul(w).redAdd(r_D);
-        proof.z_E = r_F.redMul(w).redAdd(r_E);
 
         var y = utils.hash(ABICoder.encodeParameters([
             'bytes32',

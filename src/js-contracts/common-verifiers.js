@@ -25,7 +25,6 @@ class CommonVerifiers{
         if (this._type === 'verifier') return IP.gSum64();
     }
 
-
     //IDENTICAL
     verify(proof, sigmaAuxiliaries, auxiliaries){
 
@@ -55,7 +54,7 @@ class CommonVerifiers{
 
         for (let i = 0; i < this._n; i++) {
 
-            ipAuxiliaries.o = utils.hash(ABICoder.encodeParameters([
+            ipAuxiliaries.o = utils.hash(ABICoder.encodeParameters( [
                 'bytes32',
                 'bytes32[2]',
                 'bytes32[2]',
