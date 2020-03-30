@@ -45,9 +45,6 @@ class GeneratorParams{
             this.hsVector = hs;
         }
 
-        this.gs = this.gsVector.getVector();
-        this.hs = this.hsVector.getVector();
-
     }
 
     commit (blinding, gExp, hExp) {
