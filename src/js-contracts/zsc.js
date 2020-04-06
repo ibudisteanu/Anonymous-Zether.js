@@ -61,14 +61,14 @@ class ZSC{
 
     }
 
-    async _deletePending(hash){
+    async _deletePendingMap(hash){
 
         delete this._pending[ utils.fromHex( hash ) ];
 
     }
 
     //if not found returns G1Point[2] with empty points
-    async _getPending(hash){
+    async _getPendingMap(hash){
 
         hash = utils.fromHex( hash );
 
@@ -77,7 +77,7 @@ class ZSC{
 
     }
 
-    async _setPending(hash, value){
+    async _setPendingMap(hash, value){
 
         if (!value[0].validate()) throw "Acc0 is invalid";
         if (!value[1].validate()) throw "Acc1 is invalid";
@@ -87,14 +87,14 @@ class ZSC{
     }
 
     //if not found, returns 0
-    async _getLastRollOver(hash){
+    async _getLastRollOverMap(hash){
 
         let out = this._lastRollOver[ utils.fromHex( hash ) ];
 
         return out || 0;
     }
 
-    async _setLastRollOver(hash, value){
+    async _setLastRollOverMap(hash, value){
         this._lastRollOver[ utils.fromHex(hash) ] = value;
     }
 
@@ -130,7 +130,7 @@ class ZSC{
     async registered(yHash){
 
         const acc = await this._getAccMap(yHash);
-        const pending = await this._getPending(yHash);
+        const pending = await this._getPendingMap(yHash);
 
         const zero = utils.G1Point0();
 
@@ -160,7 +160,7 @@ class ZSC{
         const yHash = utils.keccak256( utils.encodedPackaged( bn128.serialize(y) ) );
         if ( await this.registered(yHash) ) throw "Account already registered!";
 
-        await this._setPending(yHash, [ y, utils.g() ] );
+        await this._setPendingMap(yHash, [ y, utils.g() ] );
 
         return {
             challenge,
@@ -177,10 +177,10 @@ class ZSC{
 
         if (  bTransfer > MAX || bTransfer < 0 )throw "Deposit amount out of range."; // uint, so other way not necessary?
 
-        let scratch = await this._getPending(yHash);
+        let scratch = await this._getPendingMap(yHash);
         scratch[0] = scratch[0].add( utils.g().mul(bTransfer) );
 
-        await this._setPending( yHash, scratch );
+        await this._setPendingMap( yHash, scratch );
 
         return true;
     }
@@ -200,9 +200,9 @@ class ZSC{
 
             accounts[i] = await this._getAccMap(yHash);
 
-            if (await this._getLastRollOver(yHash) < epoch) {
+            if (await this._getLastRollOverMap(yHash) < epoch) {
 
-                const scratch = await this._getPending(yHash );
+                const scratch = await this._getPendingMap(yHash );
                 accounts[i][0] = accounts[i][0].add( scratch[0] );
                 accounts[i][1] = accounts[i][1].add( scratch[1] );
 
@@ -236,12 +236,12 @@ class ZSC{
 
             await this._rollOver( yHash);
 
-            let scratch = await this._getPending(yHash);
+            let scratch = await this._getPendingMap(yHash);
             const pending = [];
             pending[0] = scratch[0].add( C[i] );
             pending[1] = scratch[1].add( D );
 
-            await this._setPending( yHash, pending ); // credit / debit / neither y's account.
+            await this._setPendingMap( yHash, pending ); // credit / debit / neither y's account.
 
             scratch = await this._getAccMap(yHash);
             CLn[i] = scratch[0].add( C[i] );
@@ -255,10 +255,10 @@ class ZSC{
         if ( fee.gt(0) ) {
             const minerHash = this._getMinerHash();
             await this._rollOver(minerHash);
-            const scratch = await this._getPending(minerHash);
+            const scratch = await this._getPendingMap(minerHash);
 
             scratch[0] = scratch[0].add( utils.g().mul( fee ) );
-            await this._setPending( minerHash, scratch);
+            await this._setPendingMap( minerHash, scratch);
         }
 
         const uHash = utils.keccak256(  utils.encodedPackaged( bn128.serialize(u) ) ); // NO modulo
@@ -275,16 +275,16 @@ class ZSC{
 
         const e = this._getEpoch();
 
-        if ( await this._getLastRollOver(yHash) < e) {
+        if ( await this._getLastRollOverMap(yHash) < e) {
 
-            const scratch = [ await this._getAccMap(yHash), await this._getPending(yHash) ];
+            const scratch = [ await this._getAccMap(yHash), await this._getPendingMap(yHash) ];
 
             const out1 = scratch[0][0].add( scratch[1][0] );
             const out2 = scratch[0][1].add( scratch[1][1] );
 
             await this._setAccMap(yHash, [ out1, out2 ] );
-            await this._setPending(yHash, [ utils.G1Point0(), utils.G1Point0() ] );
-            await this._setLastRollOver(yHash, e);
+            await this._setPendingMap(yHash, [ utils.G1Point0(), utils.G1Point0() ] );
+            await this._setLastRollOverMap(yHash, e);
 
         }
 
@@ -308,9 +308,9 @@ class ZSC{
 
         if ( bTransfer < 0 || bTransfer > MAX) throw "Transfer amount out of range";
 
-        let pending = await this._getPending(yHash); // could technically use sload, but... let's not go there.
+        let pending = await this._getPendingMap(yHash); // could technically use sload, but... let's not go there.
         pending[0] = pending[0].add( utils.g().mul( new BN(bTransfer).toRed(bn128.q).neg()) );
-        await this._setPending(yHash, pending);  // debit y's balance
+        await this._setPendingMap(yHash, pending);  // debit y's balance
 
         const scratch = await this._getAccMap(yHash); // simulate debit of acc---just for use in verification, won't be applied
         scratch[0] = scratch[0].add( utils.g().mul( new BN(bTransfer).toRed(bn128.q).neg()) );
