@@ -98,6 +98,7 @@ utils.sleep = wait => new Promise(resolve => setTimeout(resolve, wait) );
 
 utils.G1Point = (a,b)=>bn128.unserialize([a,b]);
 utils.G1Point0 = ()=>utils.G1Point("0x0000000000000000000000000000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000000000000000000000000000");
+utils.G1Point0Const = utils.G1Point0();
 
 
 utils.G1PointBuffer = (a) => {

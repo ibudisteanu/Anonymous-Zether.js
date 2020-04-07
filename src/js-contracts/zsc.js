@@ -132,11 +132,9 @@ class ZSC{
         const acc = await this._getAccMap(yHash);
         const pending = await this._getPendingMap(yHash);
 
-        const zero = utils.G1Point0();
-
         const scratch = [ acc, pending ];
 
-        return !( scratch[0][0].eq(zero) && scratch[0][1].eq(zero) && scratch[1][0].eq(zero) && scratch[1][1].eq(zero) );
+        return !( scratch[0][0].eq( utils.G1Point0Const ) && scratch[0][1].eq( utils.G1Point0Const ) && scratch[1][0].eq( utils.G1Point0Const ) && scratch[1][1].eq( utils.G1Point0Const ) );
     }
 
     async register(y, c,  s){
