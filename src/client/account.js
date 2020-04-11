@@ -50,13 +50,13 @@ class Account {
         return bn128.bytes(this.keypair.x);
     }
 
-    decodeBalance(){
+    async decodeBalance(){
 
-        const result = this._zsc.simulateAccounts([ this.keypair.y ], this._blockchain.getEpoch() + 1);
+        const result = await this._zsc.simulateAccounts([ this.keypair.y ], this._blockchain.getEpoch() + 1);
 
         const simulated = result[0];
 
-        this._state.available = this._zsc.readBalance( simulated[0], simulated[1], this.keypair.x );
+        this._state.available = await this._zsc.readBalance( simulated[0], simulated[1], this.keypair.x );
 
 
     }

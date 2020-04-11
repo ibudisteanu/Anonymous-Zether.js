@@ -38,7 +38,7 @@ class Client {
             const x = utils.BNFieldfromHex(  secret );
             this.account.keypair = { x, y: utils.determinePublicKey(x) };
 
-            this.account.decodeBalance( );  // warning: won't register you. assuming you registered when you first created the account.
+            await this.account.decodeBalance( );  // warning: won't register you. assuming you registered when you first created the account.
 
             console.log("Account recovered successfully.");
 
@@ -47,7 +47,7 @@ class Client {
     };
 
     //parties = y
-    onReceivedTransfer( {block, params: { y, D, C, u, v, v2 }, tx } ){
+    async onReceivedTransfer( {block, params: { y, D, C, u, v, v2 }, tx } ){
 
         console.warn('onReceivedTransfer');
 
@@ -78,7 +78,7 @@ class Client {
                     //sender
                     this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b2, type: "sender"  } );
 
-                    const value = this._zsc.readBalance( C[i], D, this.account.keypair.x, true );
+                    const value = await this._zsc.readBalance( C[i], D, this.account.keypair.x, true );
                     if (value > 0) {
                         console.log("Transfer of " + value + " sent! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
                         this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "real", value: value, type: "sender"  } );
@@ -90,7 +90,7 @@ class Client {
                     //receiver
                     this._blockchain.events.emit('transactionReceivedStatus', { tx: tx.hash, update: "whisper", value: b, type: "receiver"  } );
 
-                    const value = this._zsc.readBalance( C[i], D, this.account.keypair.x );
+                    const value = await this._zsc.readBalance( C[i], D, this.account.keypair.x );
                     if (value > 0) {
                         this.account._state.pending += value;
                         console.log("Transfer of " + value + " received! Balance now " + ( this.account._state.available + this.account._state.pending) + ".");
@@ -102,8 +102,8 @@ class Client {
 
             }catch(err){
 
-                const value1 = this._zsc.readBalance( C[i], D , this.account.keypair.x, true);
-                const value2 = this._zsc.readBalance( C[i], D, this.account.keypair.x );
+                const value1 = await this._zsc.readBalance( C[i], D , this.account.keypair.x, true);
+                const value2 = await this._zsc.readBalance( C[i], D, this.account.keypair.x );
 
                 if (value1 > 0) {
 
